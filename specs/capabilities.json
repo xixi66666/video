@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "notes": "能力分组可由同一服务覆盖，也可由小模型实现；并非 25 个独立部署。",
+  "capabilities": [
+    {
+      "id": "TEXT_REASONING",
+      "name": "LLM 语言与推理",
+      "purpose": "策划、写作、结构化输出、工具选择"
+    },
+    {
+      "id": "VISION_UNDERSTANDING",
+      "name": "VLM 视觉理解",
+      "purpose": "图片审看；视频理解需另行声明采样和时间定位能力"
+    },
+    {
+      "id": "ASR",
+      "name": "语音识别",
+      "purpose": "音频转文字，时标精度需实测"
+    },
+    {
+      "id": "OCR",
+      "name": "文字识别",
+      "purpose": "截图、扫描件、画面文字"
+    },
+    {
+      "id": "AUDIO_UNDERSTANDING",
+      "name": "音频理解",
+      "purpose": "声音事件和音乐语义理解"
+    },
+    {
+      "id": "EMBEDDING",
+      "name": "向量表示",
+      "purpose": "文本或多模态素材检索，输入模态单独声明"
+    },
+    {
+      "id": "RERANKING",
+      "name": "检索重排序",
+      "purpose": "对召回资料或素材排序"
+    },
+    {
+      "id": "TTS",
+      "name": "语音合成",
+      "purpose": "文字生成旁白或对白，克隆能力和授权单独记录"
+    },
+    {
+      "id": "FORCED_ALIGNMENT",
+      "name": "强制时间对齐",
+      "purpose": "已知文本与最终音轨对齐"
+    },
+    {
+      "id": "VAD",
+      "name": "语音活动检测",
+      "purpose": "语音区间与停顿检测"
+    },
+    {
+      "id": "DIARIZATION",
+      "name": "说话人分离标注",
+      "purpose": "标记发言区间，不自动确认真实身份"
+    },
+    {
+      "id": "SPEECH_ENHANCEMENT",
+      "name": "语音增强",
+      "purpose": "降噪、去混响等"
+    },
+    {
+      "id": "SOURCE_SEPARATION",
+      "name": "音源分离",
+      "purpose": "尝试分离人声和音乐等音源"
+    },
+    {
+      "id": "MUSIC_GENERATION",
+      "name": "音乐生成",
+      "purpose": "配乐候选"
+    },
+    {
+      "id": "SFX_GENERATION",
+      "name": "音效生成",
+      "purpose": "环境声和动作声候选"
+    },
+    {
+      "id": "VOICE_CONVERSION",
+      "name": "声音转换",
+      "purpose": "已授权音色转换"
+    },
+    {
+      "id": "IMAGE_GENERATION",
+      "name": "图像生成",
+      "purpose": "分镜图、场景、插图、封面素材"
+    },
+    {
+      "id": "IMAGE_EDITING",
+      "name": "图像编辑",
+      "purpose": "局部编辑、参考修改、扩图"
+    },
+    {
+      "id": "VIDEO_GENERATION",
+      "name": "视频生成",
+      "purpose": "文生、图生、参考素材等子能力分别声明"
+    },
+    {
+      "id": "VIDEO_EDITING",
+      "name": "生成式视频编辑",
+      "purpose": "修改既有视频，支持范围需验证"
+    },
+    {
+      "id": "AVATAR_LIPSYNC",
+      "name": "数字人与口型同步",
+      "purpose": "虚拟主持人和音频驱动人物"
+    },
+    {
+      "id": "SEGMENTATION",
+      "name": "分割与抠像",
+      "purpose": "主体遮罩、背景处理"
+    },
+    {
+      "id": "DETECTION_TRACKING",
+      "name": "检测与跟踪",
+      "purpose": "主体位置、自动裁切和跟随标注"
+    },
+    {
+      "id": "RESTORATION_UPSCALE",
+      "name": "修复与超分辨率",
+      "purpose": "改善可用性，不认定恢复真实细节"
+    },
+    {
+      "id": "FRAME_INTERPOLATION",
+      "name": "插帧",
+      "purpose": "中间帧估计，运动伪影需检查"
+    }
+  ]
+}

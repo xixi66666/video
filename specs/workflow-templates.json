@@ -1,0 +1,221 @@
+{
+  "version": "1.0.0",
+  "allNodesVisible": true,
+  "templates": [
+    {
+      "id": "REAL_PERSON",
+      "name": "真人口播",
+      "nodeIds": [
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N11",
+        "N12",
+        "N13",
+        "N14",
+        "N15",
+        "N16",
+        "N17",
+        "N18",
+        "N19",
+        "N20",
+        "N21",
+        "N22",
+        "N23",
+        "N24",
+        "N25",
+        "N26",
+        "N27",
+        "N28",
+        "N29",
+        "N30",
+        "N31",
+        "N32",
+        "N33",
+        "N34",
+        "N35",
+        "N36",
+        "N37",
+        "N38",
+        "N39",
+        "N40",
+        "N41",
+        "N42",
+        "N43",
+        "N44",
+        "N45",
+        "N46",
+        "N47",
+        "N48",
+        "N49",
+        "N50"
+      ],
+      "overrides": {
+        "N25": {
+          "mode": "HUMAN"
+        },
+        "N27": {
+          "mode": "HUMAN"
+        },
+        "N28": {
+          "mode": "HUMAN_OR_TTS"
+        },
+        "N26": {
+          "mode": "CONDITIONAL",
+          "skipReasonRequired": true
+        }
+      },
+      "notes": "没有实测演示时 N26 可不适用，保留记录；N29 可用实拍或合法辅助素材。"
+    },
+    {
+      "id": "SCREENCAST",
+      "name": "录屏知识解说",
+      "nodeIds": [
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N11",
+        "N12",
+        "N13",
+        "N14",
+        "N15",
+        "N16",
+        "N17",
+        "N18",
+        "N19",
+        "N20",
+        "N21",
+        "N22",
+        "N23",
+        "N24",
+        "N25",
+        "N26",
+        "N27",
+        "N28",
+        "N29",
+        "N30",
+        "N31",
+        "N32",
+        "N33",
+        "N34",
+        "N35",
+        "N36",
+        "N37",
+        "N38",
+        "N39",
+        "N40",
+        "N41",
+        "N42",
+        "N43",
+        "N44",
+        "N45",
+        "N46",
+        "N47",
+        "N48",
+        "N49",
+        "N50"
+      ],
+      "overrides": {
+        "N25": {
+          "mode": "CONDITIONAL",
+          "skipReasonRequired": true
+        },
+        "N27": {
+          "mode": "SCREEN_CAPTURE"
+        },
+        "N28": {
+          "mode": "HUMAN_OR_TTS"
+        }
+      },
+      "notes": "实际操作与实测由真实录屏支撑；不可用生成视频替代证据。"
+    },
+    {
+      "id": "AI_STORY",
+      "name": "AI 故事视频",
+      "nodeIds": [
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N11",
+        "N12",
+        "N13",
+        "N14",
+        "N15",
+        "N16",
+        "N17",
+        "N18",
+        "N19",
+        "N20",
+        "N21",
+        "N22",
+        "N23",
+        "N24",
+        "N25",
+        "N26",
+        "N27",
+        "N28",
+        "N29",
+        "N30",
+        "N31",
+        "N32",
+        "N33",
+        "N34",
+        "N35",
+        "N36",
+        "N37",
+        "N38",
+        "N39",
+        "N40",
+        "N41",
+        "N42",
+        "N43",
+        "N44",
+        "N45",
+        "N46",
+        "N47",
+        "N48",
+        "N49",
+        "N50"
+      ],
+      "overrides": {
+        "N25": {
+          "mode": "CONDITIONAL",
+          "skipReasonRequired": true
+        },
+        "N26": {
+          "mode": "CONDITIONAL",
+          "skipReasonRequired": true
+        },
+        "N27": {
+          "mode": "EXTERNAL_OR_MANUAL",
+          "responsibility": "B",
+          "recommendedCapabilities": [
+            "VIDEO_GENERATION"
+          ]
+        },
+        "N28": {
+          "mode": "HUMAN_OR_TTS"
+        }
+      },
+      "notes": "先参考设定、分镜预演和难镜样片；外部执行未接入时上传人工完成素材。"
+    }
+  ]
+}

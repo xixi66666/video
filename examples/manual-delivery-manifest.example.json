@@ -1,0 +1,19 @@
+{
+  "sampleData": true,
+  "projectId": "project_demo",
+  "nodeId": "N27",
+  "scopeKey": "shot:S001",
+  "method": "MANUAL_IMPORT",
+  "files": [
+    {
+      "relativePath": "shots/S001/take-01.mp4",
+      "sha256": "REPLACE_WITH_COMPUTED_SHA256",
+      "mediaType": "video/mp4",
+      "existsInThisProject": false
+    }
+  ],
+  "sourceNote": "此处填写真实制作方式和来源，不写为系统已执行",
+  "rightsStatus": "PENDING_REVIEW",
+  "reviewStatus": "DRAFT",
+  "externalExecutionReceipt": null
+}

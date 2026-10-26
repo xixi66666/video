@@ -1,0 +1,35 @@
+{
+  "version": "1.1.0",
+  "reason": "视频制作项目不再要求明确副业目标",
+  "nodes": [
+    {
+      "id": "N01",
+      "ordinal": 1,
+      "name": "明确副业目标",
+      "stage": "FOUNDATION",
+      "responsibility": "C",
+      "scope": "ACCOUNT",
+      "dependsOn": [],
+      "agentRole": "POSITIONING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "用户的时间、目标和期望",
+      "output": {
+        "artifactType": "BUSINESS_GOAL",
+        "requiredFields": [
+          "objective",
+          "timeBudget",
+          "investmentBoundary"
+        ]
+      },
+      "acceptanceCriteria": "目标、投入边界和评估周期明确",
+      "humanAction": "决定目标和投入边界",
+      "reworkAction": "修改目标时使定位与相关经营假设待复查",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    }
+  ]
+}

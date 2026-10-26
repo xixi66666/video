@@ -1,0 +1,36 @@
+{
+  "id": "tool_comfyui_remote_example",
+  "type": "COMFYUI",
+  "implementationStatus": "DOCUMENTED",
+  "enabled": false,
+  "endpoint": "https://comfyui-worker.example.invalid",
+  "credentialRef": "secret://tools/comfyui-example",
+  "environmentId": "environment_remote_example",
+  "templates": [
+    {
+      "id": "workflow_image_example",
+      "version": "1.0.0",
+      "workflowApiJsonRef": "asset://replace-with-exported-api-json",
+      "bindings": {
+        "positivePrompt": {
+          "nodeId": "REPLACE_WITH_REAL_NODE_ID",
+          "inputName": "REPLACE_WITH_REAL_INPUT"
+        },
+        "seed": {
+          "nodeId": "REPLACE_WITH_REAL_NODE_ID",
+          "inputName": "seed"
+        }
+      },
+      "bindingVerified": false,
+      "outputNodeIds": [],
+      "requiredModels": [],
+      "requiredCustomNodes": []
+    }
+  ],
+  "capabilitiesDeclared": [
+    "IMAGE_GENERATION"
+  ],
+  "capabilitiesVerified": [],
+  "cancellationPolicy": "OWNED_JOB_ONLY",
+  "notes": "接入说明示例，不是可以提交的 ComfyUI 工作流；节点 ID 和参数必须来自目标环境。"
+}

@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Node registry design contract",
+  "type": "object",
+  "required": [
+    "version",
+    "nodeCount",
+    "nodes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "authoritative": {
+      "type": "boolean"
+    },
+    "nodeCount": {
+      "const": 49
+    },
+    "notes": {
+      "type": "string"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 49,
+      "maxItems": 49,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "ordinal",
+          "name",
+          "stage",
+          "responsibility",
+          "scope",
+          "dependsOn",
+          "agentRole",
+          "recommendedCapabilities",
+          "executorKind",
+          "output",
+          "implementationStatus",
+          "applicability",
+          "inputDescription",
+          "acceptanceCriteria",
+          "humanAction",
+          "reworkAction",
+          "manualFallback"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^N[0-9]{2}$"
+          },
+          "ordinal": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 49
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stage": {
+            "enum": [
+              "FOUNDATION",
+              "IDEATION",
+              "PREPRODUCTION",
+              "PRODUCTION",
+              "POSTPRODUCTION",
+              "DELIVERY",
+              "REVIEW",
+              "LIBRARY",
+              "BUSINESS"
+            ]
+          },
+          "responsibility": {
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ]
+          },
+          "scope": {
+            "enum": [
+              "ACCOUNT",
+              "IDEA",
+              "PROJECT",
+              "SHOT",
+              "TRACK",
+              "PLATFORM"
+            ]
+          },
+          "dependsOn": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^N[0-9]{2}$"
+            }
+          },
+          "agentRole": {
+            "enum": [
+              "PRODUCER",
+              "POSITIONING",
+              "TOPIC_RESEARCH",
+              "FACT_CHECK",
+              "WRITER",
+              "DIRECTOR",
+              "ART_CONTINUITY",
+              "CAPTURE",
+              "AUDIO",
+              "IMAGE",
+              "VIDEO",
+              "EDITOR",
+              "QUALITY",
+              "PACKAGING",
+              "PUBLISHER",
+              "FEEDBACK",
+              "ANALYST",
+              "LIBRARIAN",
+              "BUSINESS"
+            ]
+          },
+          "recommendedCapabilities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "TEXT_REASONING",
+                "VISION_UNDERSTANDING",
+                "ASR",
+                "OCR",
+                "AUDIO_UNDERSTANDING",
+                "EMBEDDING",
+                "RERANKING",
+                "TTS",
+                "FORCED_ALIGNMENT",
+                "VAD",
+                "DIARIZATION",
+                "SPEECH_ENHANCEMENT",
+                "SOURCE_SEPARATION",
+                "MUSIC_GENERATION",
+                "SFX_GENERATION",
+                "VOICE_CONVERSION",
+                "IMAGE_GENERATION",
+                "IMAGE_EDITING",
+                "VIDEO_GENERATION",
+                "VIDEO_EDITING",
+                "AVATAR_LIPSYNC",
+                "SEGMENTATION",
+                "DETECTION_TRACKING",
+                "RESTORATION_UPSCALE",
+                "FRAME_INTERPOLATION"
+              ]
+            }
+          },
+          "executorKind": {
+            "enum": [
+              "AGENT",
+              "HUMAN",
+              "HUMAN_OR_TOOL",
+              "HUMAN_OR_EXTERNAL",
+              "HUMAN_OR_CONNECTOR",
+              "STORAGE",
+              "MEDIA_ENGINE",
+              "CONNECTOR"
+            ]
+          },
+          "output": {
+            "type": "object",
+            "required": [
+              "artifactType",
+              "requiredFields"
+            ],
+            "properties": {
+              "artifactType": {
+                "type": "string"
+              },
+              "requiredFields": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "implementationStatus": {
+            "const": "DESIGNED"
+          },
+          "applicability": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inputDescription": {
+            "type": "string",
+            "minLength": 1
+          },
+          "acceptanceCriteria": {
+            "type": "string",
+            "minLength": 1
+          },
+          "humanAction": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reworkAction": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manualFallback": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

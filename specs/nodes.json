@@ -1,0 +1,1600 @@
+{
+  "version": "1.1.0",
+  "authoritative": true,
+  "nodeCount": 49,
+  "notes": "N01 明确副业目标已退役；活动节点 N02—N50，编号保留以兼容历史数据。",
+  "nodes": [
+    {
+      "id": "N02",
+      "ordinal": 1,
+      "name": "盘点自身条件",
+      "stage": "FOUNDATION",
+      "responsibility": "B",
+      "scope": "ACCOUNT",
+      "dependsOn": [],
+      "agentRole": "POSITIONING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "真实能力、经历、可用设备和素材",
+      "output": {
+        "artifactType": "RESOURCE_PROFILE",
+        "requiredFields": [
+          "skills",
+          "experiences",
+          "resources",
+          "privacyBoundaries"
+        ]
+      },
+      "acceptanceCriteria": "明确哪些是事实、哪些可公开",
+      "humanAction": "补充真实经历及隐私边界",
+      "reworkAction": "补充资源事实，重新评估可执行性",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N03",
+      "ordinal": 2,
+      "name": "确定目标观众",
+      "stage": "FOUNDATION",
+      "responsibility": "B",
+      "scope": "ACCOUNT",
+      "dependsOn": [
+        "N02"
+      ],
+      "agentRole": "POSITIONING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "创作目标、资源与公开需求线索",
+      "output": {
+        "artifactType": "AUDIENCE_PROFILE",
+        "requiredFields": [
+          "segments",
+          "problems",
+          "evidenceRefs"
+        ]
+      },
+      "acceptanceCriteria": "受众足够具体，需求有证据或标为假设",
+      "humanAction": "选择愿意长期服务的受众",
+      "reworkAction": "补采证据或调整人群假设",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N04",
+      "ordinal": 3,
+      "name": "确定账号定位",
+      "stage": "FOUNDATION",
+      "responsibility": "C",
+      "scope": "ACCOUNT",
+      "dependsOn": [
+        "N03"
+      ],
+      "agentRole": "POSITIONING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "目标、人群、资源、差异方案",
+      "output": {
+        "artifactType": "POSITIONING",
+        "requiredFields": [
+          "audience",
+          "valuePromise",
+          "credibility",
+          "limitations"
+        ]
+      },
+      "acceptanceCriteria": "定位可解释且有真实支撑",
+      "humanAction": "决定对外身份和长期方向",
+      "reworkAction": "更新定位版本，已发布内容保留历史",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N05",
+      "ordinal": 4,
+      "name": "设计内容栏目",
+      "stage": "FOUNDATION",
+      "responsibility": "B",
+      "scope": "ACCOUNT",
+      "dependsOn": [
+        "N04"
+      ],
+      "agentRole": "POSITIONING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "定位、素材供给与时间预算",
+      "output": {
+        "artifactType": "CONTENT_PILLARS",
+        "requiredFields": [
+          "pillars",
+          "topicExamples",
+          "productionConstraints"
+        ]
+      },
+      "acceptanceCriteria": "栏目能持续生产并有选题样例",
+      "humanAction": "选择栏目与制作负担",
+      "reworkAction": "合并过重栏目，保留历史归属",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N06",
+      "ordinal": 5,
+      "name": "建立账号主页",
+      "stage": "FOUNDATION",
+      "responsibility": "B",
+      "scope": "ACCOUNT",
+      "dependsOn": [
+        "N04"
+      ],
+      "agentRole": "PACKAGING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING",
+        "IMAGE_GENERATION"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "已确认定位和用户持有账号",
+      "output": {
+        "artifactType": "ACCOUNT_PROFILE",
+        "requiredFields": [
+          "platforms",
+          "profileDrafts",
+          "identityStatus"
+        ]
+      },
+      "acceptanceCriteria": "公开信息一致，认证状态如实记录",
+      "humanAction": "身份操作及公开信息确认",
+      "reworkAction": "修改公开资料，平台生效状态另行记录",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N07",
+      "ordinal": 6,
+      "name": "建立制作规范",
+      "stage": "FOUNDATION",
+      "responsibility": "B",
+      "scope": "ACCOUNT",
+      "dependsOn": [
+        "N05",
+        "N06"
+      ],
+      "agentRole": "ART_CONTINUITY",
+      "recommendedCapabilities": [
+        "TEXT_REASONING",
+        "VISION_UNDERSTANDING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "栏目、主页、风格和制作条件",
+      "output": {
+        "artifactType": "PRODUCTION_STANDARD",
+        "requiredFields": [
+          "visualRules",
+          "audioRules",
+          "fileRules",
+          "qualityRules"
+        ]
+      },
+      "acceptanceCriteria": "样式、目录和质量规则可执行",
+      "humanAction": "选择参考样片与规范",
+      "reworkAction": "修订规范，只影响后续或显式迁移项目",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N08",
+      "ordinal": 7,
+      "name": "捕捉原始想法",
+      "stage": "IDEATION",
+      "responsibility": "B",
+      "scope": "IDEA",
+      "dependsOn": [],
+      "agentRole": "TOPIC_RESEARCH",
+      "recommendedCapabilities": [
+        "TEXT_REASONING",
+        "ASR"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "用户文字、语音或随手记录",
+      "output": {
+        "artifactType": "RAW_IDEA",
+        "requiredFields": [
+          "rawContent",
+          "inputMode",
+          "capturedAt"
+        ]
+      },
+      "acceptanceCriteria": "保留原始记录且整理不改变原意",
+      "humanAction": "提供原始想法",
+      "reworkAction": "回到原文纠正转写或理解",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N09",
+      "ordinal": 8,
+      "name": "解释想法的来源",
+      "stage": "IDEATION",
+      "responsibility": "B",
+      "scope": "IDEA",
+      "dependsOn": [
+        "N08"
+      ],
+      "agentRole": "TOPIC_RESEARCH",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "原始想法及用户补充",
+      "output": {
+        "artifactType": "IDEA_CONTEXT",
+        "requiredFields": [
+          "trigger",
+          "realScenario",
+          "knownFacts",
+          "openQuestions"
+        ]
+      },
+      "acceptanceCriteria": "事实与推测区分",
+      "humanAction": "补充真实触发场景",
+      "reworkAction": "追问缺失背景，禁止编造亲历",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N10",
+      "ordinal": 9,
+      "name": "翻译成观众问题",
+      "stage": "IDEATION",
+      "responsibility": "B",
+      "scope": "IDEA",
+      "dependsOn": [
+        "N09",
+        "N03"
+      ],
+      "agentRole": "TOPIC_RESEARCH",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "想法背景与已批准受众版本",
+      "output": {
+        "artifactType": "AUDIENCE_PROBLEM",
+        "requiredFields": [
+          "audience",
+          "scenario",
+          "problem",
+          "expectedBenefit"
+        ]
+      },
+      "acceptanceCriteria": "问题具体且未偏离想法",
+      "humanAction": "确认表达意图",
+      "reworkAction": "重新限定人群、场景和收益",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N11",
+      "ordinal": 10,
+      "name": "验证需求",
+      "stage": "IDEATION",
+      "responsibility": "B",
+      "scope": "IDEA",
+      "dependsOn": [
+        "N10"
+      ],
+      "agentRole": "TOPIC_RESEARCH",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "问题、允许读取的公开来源或人工导入",
+      "output": {
+        "artifactType": "DEMAND_EVIDENCE",
+        "requiredFields": [
+          "sources",
+          "observations",
+          "sampleLimits",
+          "hypotheses"
+        ]
+      },
+      "acceptanceCriteria": "来源可追溯，样本局限明确",
+      "humanAction": "判断证据是否足够",
+      "reworkAction": "补采或降低需求结论强度",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N12",
+      "ordinal": 11,
+      "name": "分析已有内容",
+      "stage": "IDEATION",
+      "responsibility": "B",
+      "scope": "IDEA",
+      "dependsOn": [
+        "N11"
+      ],
+      "agentRole": "TOPIC_RESEARCH",
+      "recommendedCapabilities": [
+        "TEXT_REASONING",
+        "VISION_UNDERSTANDING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "授权访问的参考内容及其链接",
+      "output": {
+        "artifactType": "REFERENCE_ANALYSIS",
+        "requiredFields": [
+          "references",
+          "comparison",
+          "unansweredQuestions"
+        ]
+      },
+      "acceptanceCriteria": "比较有依据，不抄袭表达和素材",
+      "humanAction": "判断有价值的差异",
+      "reworkAction": "修订比较维度或替换参考样本",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N13",
+      "ordinal": 12,
+      "name": "选择自己的切入点",
+      "stage": "IDEATION",
+      "responsibility": "B",
+      "scope": "IDEA",
+      "dependsOn": [
+        "N12"
+      ],
+      "agentRole": "TOPIC_RESEARCH",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "需求、同类比较和自身条件",
+      "output": {
+        "artifactType": "ANGLE_OPTIONS",
+        "requiredFields": [
+          "options",
+          "evidence",
+          "productionEstimates",
+          "recommendation"
+        ]
+      },
+      "acceptanceCriteria": "切入点有独特材料且可制作",
+      "humanAction": "选择表达角度",
+      "reworkAction": "调整角度，重估素材与成本",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N14",
+      "ordinal": 13,
+      "name": "判断是否值得做",
+      "stage": "IDEATION",
+      "responsibility": "C",
+      "scope": "IDEA",
+      "dependsOn": [
+        "N13"
+      ],
+      "agentRole": "PRODUCER",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "角度、需求、成本和投入边界",
+      "output": {
+        "artifactType": "GREENLIGHT_DECISION",
+        "requiredFields": [
+          "decision",
+          "rationale",
+          "budgetLimit",
+          "scope"
+        ]
+      },
+      "acceptanceCriteria": "明确制作、暂存或放弃并绑定范围",
+      "humanAction": "通过 G02 作立项决定",
+      "reworkAction": "暂存或调整选题，不启动生产",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N15",
+      "ordinal": 14,
+      "name": "写选题卡",
+      "stage": "IDEATION",
+      "responsibility": "A",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N14"
+      ],
+      "agentRole": "TOPIC_RESEARCH",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "G02 批准的立项决定和选题材料",
+      "output": {
+        "artifactType": "TOPIC_CARD",
+        "requiredFields": [
+          "audience",
+          "problem",
+          "angle",
+          "promise",
+          "scope"
+        ]
+      },
+      "acceptanceCriteria": "准确整合批准内容，不增加承诺",
+      "humanAction": "通常无需逐条确认",
+      "reworkAction": "按原立项信息重建，不擅自改范围",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N16",
+      "ordinal": 15,
+      "name": "收集资料与案例",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N15"
+      ],
+      "agentRole": "FACT_CHECK",
+      "recommendedCapabilities": [
+        "TEXT_REASONING",
+        "OCR"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "选题卡、原始资料和个人案例",
+      "output": {
+        "artifactType": "SOURCE_PACK",
+        "requiredFields": [
+          "sources",
+          "claims",
+          "cases",
+          "rightsNotes"
+        ]
+      },
+      "acceptanceCriteria": "来源、日期、引用位置和缺口明确",
+      "humanAction": "核查关键证据并提供真实案例",
+      "reworkAction": "替换失效来源或删除无依据说法",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N17",
+      "ordinal": 16,
+      "name": "实际验证",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N16"
+      ],
+      "agentRole": "FACT_CHECK",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "待验证结论、演示环境与测试计划",
+      "output": {
+        "artifactType": "VALIDATION_RECORD",
+        "requiredFields": [
+          "method",
+          "inputs",
+          "results",
+          "limitations",
+          "evidenceRefs"
+        ]
+      },
+      "acceptanceCriteria": "结果可复查，不用生成画面冒充实测",
+      "humanAction": "完成真实体验和关键验证",
+      "reworkAction": "修正方法，保留失败记录再测试",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N18",
+      "ordinal": 17,
+      "name": "确定核心结论",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N17"
+      ],
+      "agentRole": "WRITER",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "资料和验证结果",
+      "output": {
+        "artifactType": "CORE_MESSAGE",
+        "requiredFields": [
+          "conclusion",
+          "evidenceRefs",
+          "conditions",
+          "uncertainties"
+        ]
+      },
+      "acceptanceCriteria": "结论强度与证据匹配",
+      "humanAction": "确认立场和适用条件",
+      "reworkAction": "降低结论强度或补验证",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N19",
+      "ordinal": 18,
+      "name": "选择呈现形式",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N18",
+        "N07"
+      ],
+      "agentRole": "DIRECTOR",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "结论、制作规范、出镜意愿和预算",
+      "output": {
+        "artifactType": "FORMAT_PLAN",
+        "requiredFields": [
+          "contentMode",
+          "format",
+          "aspectRatio",
+          "targetDurationMs"
+        ]
+      },
+      "acceptanceCriteria": "形式能表达内容且资源支持",
+      "humanAction": "确认出镜、预算和形式",
+      "reworkAction": "换更可控形式，不假定工具可用",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N20",
+      "ordinal": 19,
+      "name": "写内容大纲",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N19"
+      ],
+      "agentRole": "WRITER",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "结论、形式、证据和观众问题",
+      "output": {
+        "artifactType": "OUTLINE",
+        "requiredFields": [
+          "sections",
+          "evidenceMapping",
+          "estimatedDurationMs"
+        ]
+      },
+      "acceptanceCriteria": "重点清楚且每段有作用",
+      "humanAction": "确认重点和信息顺序",
+      "reworkAction": "删去重复，补缺失证据",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N21",
+      "ordinal": 20,
+      "name": "写开头",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N20"
+      ],
+      "agentRole": "WRITER",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "选题承诺和大纲",
+      "output": {
+        "artifactType": "OPENING_OPTIONS",
+        "requiredFields": [
+          "candidates",
+          "selectedCandidateId",
+          "promiseCheck"
+        ]
+      },
+      "acceptanceCriteria": "开头与正文相符，表达具体",
+      "humanAction": "选开场方向",
+      "reworkAction": "修改误导承诺或无效铺垫",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N22",
+      "ordinal": 21,
+      "name": "写完整脚本",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N20",
+        "N21"
+      ],
+      "agentRole": "WRITER",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "大纲、开头、来源与实际验证",
+      "output": {
+        "artifactType": "SCRIPT",
+        "requiredFields": [
+          "segments",
+          "claims",
+          "sourceRefs",
+          "estimatedDurationMs"
+        ]
+      },
+      "acceptanceCriteria": "逻辑完整，事实可追溯，个人经历真实",
+      "humanAction": "确认观点、事实与个人表达",
+      "reworkAction": "按问题定位修改段落并标记下游",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N23",
+      "ordinal": 22,
+      "name": "口语化与试读",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N22"
+      ],
+      "agentRole": "WRITER",
+      "recommendedCapabilities": [
+        "TEXT_REASONING",
+        "TTS"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "脚本、术语表和声音参考",
+      "output": {
+        "artifactType": "READTHROUGH",
+        "requiredFields": [
+          "spokenScript",
+          "pronunciationGuide",
+          "timingEstimate",
+          "previewRefs"
+        ]
+      },
+      "acceptanceCriteria": "自然可读，术语准确，时长可接受",
+      "humanAction": "试读或试听并判断表达",
+      "reworkAction": "修改文稿和发音，重新估时",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N24",
+      "ordinal": 23,
+      "name": "写分镜与素材清单",
+      "stage": "PREPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N23",
+        "N19"
+      ],
+      "agentRole": "DIRECTOR",
+      "recommendedCapabilities": [
+        "TEXT_REASONING",
+        "VISION_UNDERSTANDING",
+        "IMAGE_GENERATION"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "试读稿、形式、规范与参考素材",
+      "output": {
+        "artifactType": "STORYBOARD",
+        "requiredFields": [
+          "shots",
+          "assetNeeds",
+          "styleGuideRef",
+          "animaticRef",
+          "hardShotTest"
+        ]
+      },
+      "acceptanceCriteria": "每镜有目的、声画、时长、来源方式；预演和难镜测试完成或明确不适用",
+      "humanAction": "通过 G03 确认脚本分镜和样片",
+      "reworkAction": "调整难镜方案后再投入批量生成",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N25",
+      "ordinal": 24,
+      "name": "准备拍摄环境",
+      "stage": "PRODUCTION",
+      "responsibility": "C",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N24"
+      ],
+      "agentRole": "CAPTURE",
+      "recommendedCapabilities": [
+        "VISION_UNDERSTANDING"
+      ],
+      "executorKind": "HUMAN",
+      "applicability": "实拍执行；纯 AI 路线记录替代或不适用",
+      "inputDescription": "已确认拍摄计划、设备与场景",
+      "output": {
+        "artifactType": "SETUP_RECORD",
+        "requiredFields": [
+          "setupChecklist",
+          "testClipRefs",
+          "applicabilityReason"
+        ]
+      },
+      "acceptanceCriteria": "现场声画测试通过；纯 AI 可标记不适用并说明替代设定",
+      "humanAction": "布置机位、灯光、收音与道具",
+      "reworkAction": "修正环境并重测",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N26",
+      "ordinal": 25,
+      "name": "准备演示环境",
+      "stage": "PRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N24"
+      ],
+      "agentRole": "CAPTURE",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "HUMAN_OR_TOOL",
+      "applicability": "教程实测适用；无演示可显式跳过",
+      "inputDescription": "演示步骤、模拟数据和必要软件",
+      "output": {
+        "artifactType": "DEMO_ENVIRONMENT",
+        "requiredFields": [
+          "scenario",
+          "dataRefs",
+          "privacyCheck",
+          "readiness"
+        ]
+      },
+      "acceptanceCriteria": "结果可复现，不暴露真实敏感信息",
+      "humanAction": "确认账号、数据与演示范围",
+      "reworkAction": "重置模拟环境或替换数据",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N27",
+      "ordinal": 26,
+      "name": "拍摄主体内容",
+      "stage": "PRODUCTION",
+      "responsibility": "C",
+      "scope": "SHOT",
+      "dependsOn": [
+        "N25",
+        "N26"
+      ],
+      "agentRole": "CAPTURE",
+      "recommendedCapabilities": [
+        "VISION_UNDERSTANDING",
+        "VIDEO_GENERATION"
+      ],
+      "executorKind": "HUMAN_OR_EXTERNAL",
+      "applicability": "实拍为 C；纯 AI 为 B，未接入时上传结果",
+      "inputDescription": "镜头分解、环境、参考图与预算",
+      "output": {
+        "artifactType": "PRIMARY_FOOTAGE",
+        "requiredFields": [
+          "shotId",
+          "candidates",
+          "method",
+          "captureNotes"
+        ]
+      },
+      "acceptanceCriteria": "主体镜头覆盖完整；生成素材按分镜验收",
+      "humanAction": "实拍由人执行；纯 AI 转 B 选择候选",
+      "reworkAction": "按镜头补拍或改生成要求",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N28",
+      "ordinal": 27,
+      "name": "录制旁白",
+      "stage": "PRODUCTION",
+      "responsibility": "B",
+      "scope": "TRACK",
+      "dependsOn": [
+        "N23",
+        "N24"
+      ],
+      "agentRole": "AUDIO",
+      "recommendedCapabilities": [
+        "TTS",
+        "ASR",
+        "FORCED_ALIGNMENT"
+      ],
+      "executorKind": "HUMAN_OR_EXTERNAL",
+      "applicability": "所有路线适用",
+      "inputDescription": "确认脚本、发音表、声音设定",
+      "output": {
+        "artifactType": "NARRATION",
+        "requiredFields": [
+          "trackId",
+          "audioRef",
+          "transcript",
+          "alignment",
+          "voiceAuthorization"
+        ]
+      },
+      "acceptanceCriteria": "内容无漏读误读，语气合适，时标基于实际音轨",
+      "humanAction": "真人录音或确认合成声音",
+      "reworkAction": "分段补录，更新对齐并标记相关镜头",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N29",
+      "ordinal": 28,
+      "name": "补充辅助画面",
+      "stage": "PRODUCTION",
+      "responsibility": "B",
+      "scope": "SHOT",
+      "dependsOn": [
+        "N24",
+        "N27"
+      ],
+      "agentRole": "VIDEO",
+      "recommendedCapabilities": [
+        "IMAGE_GENERATION",
+        "IMAGE_EDITING",
+        "VIDEO_GENERATION",
+        "VISION_UNDERSTANDING"
+      ],
+      "executorKind": "HUMAN_OR_EXTERNAL",
+      "applicability": "所有路线适用",
+      "inputDescription": "分镜缺口、参考设定和来源范围",
+      "output": {
+        "artifactType": "SUPPORTING_ASSETS",
+        "requiredFields": [
+          "shotId",
+          "candidates",
+          "sourceRecords",
+          "continuityChecks"
+        ]
+      },
+      "acceptanceCriteria": "辅助素材解释内容，来源与连续性可检查",
+      "humanAction": "补拍或选用候选",
+      "reworkAction": "替换不合适画面，避免重复盲重试",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N30",
+      "ordinal": 29,
+      "name": "整理与备份",
+      "stage": "PRODUCTION",
+      "responsibility": "A",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N27",
+        "N28",
+        "N29"
+      ],
+      "agentRole": "LIBRARIAN",
+      "recommendedCapabilities": [],
+      "executorKind": "STORAGE",
+      "applicability": "所有路线适用",
+      "inputDescription": "原件、素材采用记录与存储策略",
+      "output": {
+        "artifactType": "INGEST_MANIFEST",
+        "requiredFields": [
+          "files",
+          "checksums",
+          "backupStatus",
+          "shotLinks"
+        ]
+      },
+      "acceptanceCriteria": "文件可读取、校验一致、备份结果如实记录",
+      "humanAction": "仅异常处理；删除原件另行确认",
+      "reworkAction": "重新传输或校验，不覆盖原件",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N31",
+      "ordinal": 30,
+      "name": "粗剪",
+      "stage": "POSTPRODUCTION",
+      "responsibility": "A",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N30",
+        "N24"
+      ],
+      "agentRole": "EDITOR",
+      "recommendedCapabilities": [],
+      "executorKind": "MEDIA_ENGINE",
+      "applicability": "模板装配可 A；复杂叙事转 B",
+      "inputDescription": "分镜、采用素材、旁白与时标",
+      "output": {
+        "artifactType": "ROUGH_CUT",
+        "requiredFields": [
+          "timelineRef",
+          "previewRef",
+          "missingAssets"
+        ]
+      },
+      "acceptanceCriteria": "按确认分镜组装，镜头与音轨可追溯",
+      "humanAction": "叙事重构或采访纪录转 B",
+      "reworkAction": "保留旧时间线，按缺口局部重组",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N32",
+      "ordinal": 31,
+      "name": "精剪",
+      "stage": "POSTPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N31"
+      ],
+      "agentRole": "EDITOR",
+      "recommendedCapabilities": [
+        "VISION_UNDERSTANDING",
+        "TEXT_REASONING"
+      ],
+      "executorKind": "HUMAN_OR_TOOL",
+      "applicability": "所有路线适用",
+      "inputDescription": "粗剪与时间点反馈",
+      "output": {
+        "artifactType": "FINE_CUT",
+        "requiredFields": [
+          "timelineRef",
+          "previewRef",
+          "changeNotes"
+        ]
+      },
+      "acceptanceCriteria": "节奏、留白和顺序可接受，画面结构可确认",
+      "humanAction": "判断情绪、重点和节奏",
+      "reworkAction": "按时间点修改并保留版本",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N33",
+      "ordinal": 32,
+      "name": "制作字幕",
+      "stage": "POSTPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N32",
+        "N28"
+      ],
+      "agentRole": "EDITOR",
+      "recommendedCapabilities": [
+        "ASR",
+        "FORCED_ALIGNMENT",
+        "OCR"
+      ],
+      "executorKind": "HUMAN_OR_TOOL",
+      "applicability": "所有路线适用",
+      "inputDescription": "最终采用音轨、术语表和时间线",
+      "output": {
+        "artifactType": "SUBTITLE_TRACK",
+        "requiredFields": [
+          "subtitleRef",
+          "transcript",
+          "audioRevision",
+          "checks"
+        ]
+      },
+      "acceptanceCriteria": "字幕内容、断句、时标和安全区通过检查",
+      "humanAction": "核查专名、数字和歧义",
+      "reworkAction": "从最终音轨重新对齐，禁止沿用过期时标",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N34",
+      "ordinal": 33,
+      "name": "制作说明画面",
+      "stage": "POSTPRODUCTION",
+      "responsibility": "A",
+      "scope": "SHOT",
+      "dependsOn": [
+        "N32",
+        "N24"
+      ],
+      "agentRole": "IMAGE",
+      "recommendedCapabilities": [],
+      "executorKind": "MEDIA_ENGINE",
+      "applicability": "固定模板为 A；重新设计为 B",
+      "inputDescription": "确认说明文案、模板与时间线",
+      "output": {
+        "artifactType": "GRAPHICS",
+        "requiredFields": [
+          "graphicsRefs",
+          "textSourceRefs",
+          "timing"
+        ]
+      },
+      "acceptanceCriteria": "说明准确、文字可读，不遮挡关键区域",
+      "humanAction": "新设计或新解释内容转 B",
+      "reworkAction": "修正文案或布局，重渲染受影响片段",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N35",
+      "ordinal": 34,
+      "name": "处理声音",
+      "stage": "POSTPRODUCTION",
+      "responsibility": "A",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N32",
+        "N28"
+      ],
+      "agentRole": "AUDIO",
+      "recommendedCapabilities": [
+        "SPEECH_ENHANCEMENT",
+        "SOURCE_SEPARATION"
+      ],
+      "executorKind": "MEDIA_ENGINE",
+      "applicability": "基础参数化处理为 A；创意混音转 B",
+      "inputDescription": "采用音轨、时间线与已确认声音方案",
+      "output": {
+        "artifactType": "MIX",
+        "requiredFields": [
+          "audioRef",
+          "mixSettings",
+          "measurements",
+          "rightsRefs"
+        ]
+      },
+      "acceptanceCriteria": "人声清楚，按项目目标测量；没有通用平台响度假设",
+      "humanAction": "复杂修复或音乐情绪选择转 B",
+      "reworkAction": "回退原音轨，避免过处理",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N36",
+      "ordinal": 35,
+      "name": "调整画面",
+      "stage": "POSTPRODUCTION",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N32"
+      ],
+      "agentRole": "EDITOR",
+      "recommendedCapabilities": [
+        "VISION_UNDERSTANDING"
+      ],
+      "executorKind": "HUMAN_OR_TOOL",
+      "applicability": "所有路线适用",
+      "inputDescription": "精剪、参考风格、素材色彩信息",
+      "output": {
+        "artifactType": "PICTURE_FINISH",
+        "requiredFields": [
+          "pictureRef",
+          "colorNotes",
+          "frameChecks"
+        ]
+      },
+      "acceptanceCriteria": "曝光、色彩、肤色和镜头一致性可接受",
+      "humanAction": "确认视觉风格",
+      "reworkAction": "逐镜修正，不改变已核实的事实",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N37",
+      "ordinal": 36,
+      "name": "导出母版",
+      "stage": "POSTPRODUCTION",
+      "responsibility": "A",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N33",
+        "N34",
+        "N35",
+        "N36"
+      ],
+      "agentRole": "EDITOR",
+      "recommendedCapabilities": [],
+      "executorKind": "MEDIA_ENGINE",
+      "applicability": "所有路线适用",
+      "inputDescription": "确认时间线、字幕、音轨和导出预设",
+      "output": {
+        "artifactType": "MASTER",
+        "requiredFields": [
+          "fileRef",
+          "checksum",
+          "exportPreset",
+          "technicalReport"
+        ]
+      },
+      "acceptanceCriteria": "文件完整，时长/画幅/音轨/字幕符合项目规范",
+      "humanAction": "仅异常时处理",
+      "reworkAction": "修正预设或缺失素材后重新导出",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N38",
+      "ordinal": 37,
+      "name": "写标题",
+      "stage": "DELIVERY",
+      "responsibility": "B",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N37",
+        "N15"
+      ],
+      "agentRole": "PACKAGING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "成片、选题承诺与目标平台",
+      "output": {
+        "artifactType": "TITLE_OPTIONS",
+        "requiredFields": [
+          "platform",
+          "candidates",
+          "selectedTitle",
+          "consistencyCheck"
+        ]
+      },
+      "acceptanceCriteria": "准确传达价值，与正文一致",
+      "humanAction": "选择对外标题",
+      "reworkAction": "修正夸张或不对应的承诺",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N39",
+      "ordinal": 38,
+      "name": "做封面",
+      "stage": "DELIVERY",
+      "responsibility": "B",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N37",
+        "N07"
+      ],
+      "agentRole": "PACKAGING",
+      "recommendedCapabilities": [
+        "IMAGE_GENERATION",
+        "IMAGE_EDITING",
+        "VISION_UNDERSTANDING"
+      ],
+      "executorKind": "HUMAN_OR_TOOL",
+      "applicability": "所有路线适用",
+      "inputDescription": "成片、标题方向、模板与画幅要求",
+      "output": {
+        "artifactType": "COVER",
+        "requiredFields": [
+          "platform",
+          "imageRef",
+          "textLayout",
+          "cropChecks"
+        ]
+      },
+      "acceptanceCriteria": "中文标题准确，小图清晰，裁切通过",
+      "humanAction": "选择封面",
+      "reworkAction": "用排版工具修正文案与位置",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N40",
+      "ordinal": 39,
+      "name": "写配文",
+      "stage": "DELIVERY",
+      "responsibility": "B",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N38",
+        "N39"
+      ],
+      "agentRole": "PACKAGING",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "成片、来源、适用条件与平台包装",
+      "output": {
+        "artifactType": "CAPTION",
+        "requiredFields": [
+          "platform",
+          "text",
+          "topics",
+          "sourceRefs",
+          "declarations"
+        ]
+      },
+      "acceptanceCriteria": "说明准确，必要来源和声明齐全",
+      "humanAction": "确认对外表述",
+      "reworkAction": "修改不准确文案，保留版本",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N41",
+      "ordinal": 40,
+      "name": "完成发布检查",
+      "stage": "DELIVERY",
+      "responsibility": "B",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N37",
+        "N38",
+        "N39",
+        "N40"
+      ],
+      "agentRole": "QUALITY",
+      "recommendedCapabilities": [
+        "VISION_UNDERSTANDING",
+        "ASR",
+        "OCR",
+        "TEXT_REASONING"
+      ],
+      "executorKind": "HUMAN_OR_TOOL",
+      "applicability": "所有路线适用",
+      "inputDescription": "母版、平台版本、封面、文案、授权与声明",
+      "output": {
+        "artifactType": "RELEASE_CHECK",
+        "requiredFields": [
+          "technicalChecks",
+          "contentChecks",
+          "rightsChecks",
+          "releaseManifestHash"
+        ]
+      },
+      "acceptanceCriteria": "技术和内容分别检查，问题关闭，G04 绑定确定发布包",
+      "humanAction": "确认事实、隐私、授权范围和整体成片",
+      "reworkAction": "回到受影响节点，不全量重做",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N42",
+      "ordinal": 41,
+      "name": "上传与设置",
+      "stage": "DELIVERY",
+      "responsibility": "A",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N41"
+      ],
+      "agentRole": "PUBLISHER",
+      "recommendedCapabilities": [],
+      "executorKind": "CONNECTOR",
+      "applicability": "未接入或无草稿能力时手工交付",
+      "inputDescription": "G04 批准发布包、账号和可用权限",
+      "output": {
+        "artifactType": "UPLOAD_RECEIPT",
+        "requiredFields": [
+          "platform",
+          "accountId",
+          "uploadStatus",
+          "draftId",
+          "manualInstructions"
+        ]
+      },
+      "acceptanceCriteria": "支持草稿时只上传草稿；不支持则人工交付，不自动变成公开",
+      "humanAction": "授权/设置异常时处理",
+      "reworkAction": "先查询远端状态，避免重复上传",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N43",
+      "ordinal": 42,
+      "name": "预览与确认发布",
+      "stage": "DELIVERY",
+      "responsibility": "C",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N42"
+      ],
+      "agentRole": "PUBLISHER",
+      "recommendedCapabilities": [],
+      "executorKind": "HUMAN_OR_CONNECTOR",
+      "applicability": "所有路线适用",
+      "inputDescription": "最终预览、G05 授权、账号与发布时间",
+      "output": {
+        "artifactType": "PUBLISH_RECEIPT",
+        "requiredFields": [
+          "platform",
+          "accountId",
+          "manifestHash",
+          "submissionStatus",
+          "remoteId"
+        ]
+      },
+      "acceptanceCriteria": "发布动作对应批准版本，提交成功不冒充上线",
+      "humanAction": "通过 G05 明确授权；手工发布可导入凭证",
+      "reworkAction": "不盲重发；变更目标或内容需重新确认",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N44",
+      "ordinal": 43,
+      "name": "检查发布结果",
+      "stage": "DELIVERY",
+      "responsibility": "A",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N43"
+      ],
+      "agentRole": "PUBLISHER",
+      "recommendedCapabilities": [],
+      "executorKind": "CONNECTOR",
+      "applicability": "所有路线适用",
+      "inputDescription": "提交凭证、远端状态或人工导入结果",
+      "output": {
+        "artifactType": "PUBLICATION_STATUS",
+        "requiredFields": [
+          "platform",
+          "visibility",
+          "status",
+          "workUrl",
+          "checkedAt"
+        ]
+      },
+      "acceptanceCriteria": "审核中/失败/可见分别记录，保留检查时间",
+      "humanAction": "申诉或重新判断时介入",
+      "reworkAction": "查询与对账，状态不明时保持待确认",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N45",
+      "ordinal": 44,
+      "name": "回复与收集反馈",
+      "stage": "REVIEW",
+      "responsibility": "B",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N44"
+      ],
+      "agentRole": "FEEDBACK",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "HUMAN_OR_CONNECTOR",
+      "applicability": "所有路线适用",
+      "inputDescription": "授权评论导入与已批准回复范围",
+      "output": {
+        "artifactType": "FEEDBACK_DIGEST",
+        "requiredFields": [
+          "comments",
+          "questions",
+          "replyDrafts",
+          "sentReceipts"
+        ]
+      },
+      "acceptanceCriteria": "问题归类准确，对外发送有明确授权",
+      "humanAction": "确认回复及合作、争议与承诺",
+      "reworkAction": "修改草稿，不把草稿记录成已发送",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N46",
+      "ordinal": 45,
+      "name": "记录数据",
+      "stage": "REVIEW",
+      "responsibility": "A",
+      "scope": "PLATFORM",
+      "dependsOn": [
+        "N44"
+      ],
+      "agentRole": "ANALYST",
+      "recommendedCapabilities": [],
+      "executorKind": "CONNECTOR",
+      "applicability": "所有路线适用",
+      "inputDescription": "授权后台数据或人工导入文件",
+      "output": {
+        "artifactType": "METRIC_SNAPSHOT",
+        "requiredFields": [
+          "platform",
+          "observedAt",
+          "window",
+          "metrics",
+          "source"
+        ]
+      },
+      "acceptanceCriteria": "指标定义、时间窗、缺失值清楚",
+      "humanAction": "异常口径时介入",
+      "reworkAction": "保留原始导入，修正映射后重算",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N47",
+      "ordinal": 46,
+      "name": "分析内容表现",
+      "stage": "REVIEW",
+      "responsibility": "B",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N45",
+        "N46"
+      ],
+      "agentRole": "ANALYST",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "指标快照、评论与内容版本",
+      "output": {
+        "artifactType": "PERFORMANCE_REVIEW",
+        "requiredFields": [
+          "comparisons",
+          "hypotheses",
+          "confounders",
+          "evidenceRefs"
+        ]
+      },
+      "acceptanceCriteria": "结论能回到数据，不把相关性当因果",
+      "humanAction": "结合内容与背景判断",
+      "reworkAction": "补样本或降低结论强度",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N48",
+      "ordinal": 47,
+      "name": "选择下一次改进",
+      "stage": "REVIEW",
+      "responsibility": "C",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N47"
+      ],
+      "agentRole": "ANALYST",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "复盘假设与可用投入",
+      "output": {
+        "artifactType": "IMPROVEMENT_DECISION",
+        "requiredFields": [
+          "chosenChange",
+          "reason",
+          "measurementPlan",
+          "nextIterationRef"
+        ]
+      },
+      "acceptanceCriteria": "明确改一个什么、如何观察",
+      "humanAction": "选择优先改进方向；纳入 G06",
+      "reworkAction": "创建新迭代，不覆盖已发布版本",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N49",
+      "ordinal": 48,
+      "name": "沉淀可复用资产",
+      "stage": "LIBRARY",
+      "responsibility": "A",
+      "scope": "PROJECT",
+      "dependsOn": [
+        "N47",
+        "N48"
+      ],
+      "agentRole": "LIBRARIAN",
+      "recommendedCapabilities": [],
+      "executorKind": "STORAGE",
+      "applicability": "所有路线适用",
+      "inputDescription": "采用记录、已确认复盘标签和授权范围",
+      "output": {
+        "artifactType": "LIBRARY_MANIFEST",
+        "requiredFields": [
+          "assetRefs",
+          "tags",
+          "sourceLinks",
+          "reuseConstraints"
+        ]
+      },
+      "acceptanceCriteria": "可检索、可追溯、授权范围保留",
+      "humanAction": "新增主观优秀标准时确认",
+      "reworkAction": "修正标签，禁止把失败候选混为采用版本",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "N50",
+      "ordinal": 49,
+      "name": "检查副业价值",
+      "stage": "BUSINESS",
+      "responsibility": "C",
+      "scope": "ACCOUNT",
+      "dependsOn": [
+        "N49"
+      ],
+      "agentRole": "BUSINESS",
+      "recommendedCapabilities": [
+        "TEXT_REASONING"
+      ],
+      "executorKind": "AGENT",
+      "applicability": "所有路线适用",
+      "inputDescription": "工时、模型费用、收入、有效业务结果和原目标",
+      "output": {
+        "artifactType": "BUSINESS_REVIEW",
+        "requiredFields": [
+          "period",
+          "costs",
+          "revenue",
+          "outcomes",
+          "decision"
+        ]
+      },
+      "acceptanceCriteria": "指标口径清楚，继续/调整/停止有明确决定",
+      "humanAction": "通过 G06 决定下一周期投入",
+      "reworkAction": "调整下一周期计划，不改变历史账目",
+      "manualFallback": "上传或填写同类型产物并补齐来源、版本、制作方式和检查记录；不伪造执行成功。",
+      "implementationStatus": "DESIGNED"
+    }
+  ]
+}

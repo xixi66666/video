@@ -1,0 +1,157 @@
+{
+  "version": "1.0.0",
+  "agents": [
+    {
+      "id": "PRODUCER",
+      "name": "制作统筹",
+      "workUnit": "统筹与项目管理",
+      "responsibility": "组织任务、解释阻塞、建议下一步；系统服务执行状态与预算约束",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "POSITIONING",
+      "name": "定位与栏目",
+      "workUnit": "研究与策划",
+      "responsibility": "梳理目标、受众、长期定位与栏目",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "TOPIC_RESEARCH",
+      "name": "选题研究",
+      "workUnit": "研究与策划",
+      "responsibility": "研究需求、比较同类内容、形成选题",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "FACT_CHECK",
+      "name": "资料与实测核验",
+      "workUnit": "研究与策划",
+      "responsibility": "整理来源和测试证据，列出未核实问题",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "WRITER",
+      "name": "编剧",
+      "workUnit": "脚本与导演",
+      "responsibility": "生成大纲、开头、脚本和口语化版本",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "DIRECTOR",
+      "name": "导演与分镜",
+      "workUnit": "脚本与导演",
+      "responsibility": "镜头拆解、声画安排、动态预演与难点样片",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "ART_CONTINUITY",
+      "name": "美术与连续性",
+      "workUnit": "脚本与导演",
+      "responsibility": "人物、场景、服装、道具和风格一致性",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "CAPTURE",
+      "name": "拍摄与录屏辅助",
+      "workUnit": "素材制作",
+      "responsibility": "拍摄清单、演示环境、录屏与缺镜头检查",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "AUDIO",
+      "name": "声音制作",
+      "workUnit": "素材制作",
+      "responsibility": "配音、发音、时间对齐、基础声音处理",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "IMAGE",
+      "name": "图像制作",
+      "workUnit": "素材制作",
+      "responsibility": "分镜图、插图、说明图和封面素材",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "VIDEO",
+      "name": "视频素材制作",
+      "workUnit": "素材制作",
+      "responsibility": "镜头生成、候选管理和返工建议",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "EDITOR",
+      "name": "剪辑与后期",
+      "workUnit": "后期与质检",
+      "responsibility": "粗剪、字幕、时间线、混音、导出",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "QUALITY",
+      "name": "质量检查",
+      "workUnit": "后期与质检",
+      "responsibility": "技术检查、内容审看、定位问题；不代替关键人工判断",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "PACKAGING",
+      "name": "平台包装",
+      "workUnit": "发布与经营",
+      "responsibility": "标题、封面、配文和平台版本",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "PUBLISHER",
+      "name": "发布执行",
+      "workUnit": "发布与经营",
+      "responsibility": "仅执行已授权的发布计划，记录真实结果",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "FEEDBACK",
+      "name": "互动反馈",
+      "workUnit": "发布与经营",
+      "responsibility": "评论归类、回复草稿与问题沉淀",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "ANALYST",
+      "name": "数据复盘",
+      "workUnit": "发布与经营",
+      "responsibility": "比较数据，提出可验证的改进假设",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "LIBRARIAN",
+      "name": "资产管理",
+      "workUnit": "统筹与项目管理",
+      "responsibility": "整理归档、备份、来源和复用检索",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "BUSINESS",
+      "name": "经营分析",
+      "workUnit": "发布与经营",
+      "responsibility": "汇总工时、成本、收入并提出经营选项",
+      "toolPolicy": "ALLOWLIST",
+      "implementationStatus": "DESIGNED"
+    }
+  ]
+}

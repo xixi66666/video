@@ -1,0 +1,146 @@
+{
+  "version": "1.0.0",
+  "gates": [
+    {
+      "id": "G01",
+      "name": "方向确认",
+      "after": [
+        "N07"
+      ],
+      "watches": [
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06",
+        "N07"
+      ],
+      "blocks": [
+        "N10"
+      ],
+      "decision": "确认资源、受众、定位、栏目与制作规范",
+      "versionBound": true,
+      "actor": "HUMAN",
+      "scope": "ACCOUNT"
+    },
+    {
+      "id": "G02",
+      "name": "选题立项",
+      "after": [
+        "N14"
+      ],
+      "watches": [
+        "N08",
+        "N09",
+        "N10",
+        "N11",
+        "N12",
+        "N13",
+        "N14"
+      ],
+      "blocks": [
+        "N15",
+        "N16"
+      ],
+      "decision": "制作/暂存/放弃，确定选题范围和预算",
+      "versionBound": true,
+      "actor": "HUMAN",
+      "scope": "PROJECT"
+    },
+    {
+      "id": "G03",
+      "name": "制作方案确认",
+      "after": [
+        "N24"
+      ],
+      "watches": [
+        "N16",
+        "N17",
+        "N18",
+        "N19",
+        "N20",
+        "N21",
+        "N22",
+        "N23",
+        "N24"
+      ],
+      "blocks": [
+        "N25",
+        "N26",
+        "N27",
+        "N28",
+        "N29"
+      ],
+      "decision": "确认脚本、分镜、声音风格、预演和难镜样片",
+      "versionBound": true,
+      "actor": "HUMAN",
+      "scope": "PROJECT"
+    },
+    {
+      "id": "G04",
+      "name": "成片确认",
+      "after": [
+        "N41"
+      ],
+      "watches": [
+        "N31",
+        "N32",
+        "N33",
+        "N34",
+        "N35",
+        "N36",
+        "N37",
+        "N38",
+        "N39",
+        "N40",
+        "N41"
+      ],
+      "blocks": [
+        "N42"
+      ],
+      "decision": "确认确定版本的成片、封面、文案、声明和检查结果",
+      "versionBound": true,
+      "actor": "HUMAN",
+      "scope": "PLATFORM"
+    },
+    {
+      "id": "G05",
+      "name": "发布授权",
+      "after": [
+        "N42"
+      ],
+      "watches": [
+        "N37",
+        "N38",
+        "N39",
+        "N40",
+        "N41",
+        "N42"
+      ],
+      "blocks": [
+        "N43"
+      ],
+      "decision": "确认平台、账号、发布包哈希、可见范围及时间",
+      "versionBound": true,
+      "actor": "HUMAN",
+      "scope": "PLATFORM"
+    },
+    {
+      "id": "G06",
+      "name": "周期经营复盘",
+      "after": [
+        "N50"
+      ],
+      "watches": [
+        "N47",
+        "N48",
+        "N50"
+      ],
+      "blocks": [],
+      "decision": "确认下次改进与投入，生成新迭代或终止计划",
+      "versionBound": true,
+      "actor": "HUMAN",
+      "scope": "ACCOUNT"
+    }
+  ]
+}

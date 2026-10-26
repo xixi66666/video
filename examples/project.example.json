@@ -1,0 +1,28 @@
+{
+  "id": "project_demo",
+  "sampleData": true,
+  "title": "示例：用模拟会议材料制作纪要教程",
+  "workflowTemplateId": "SCREENCAST",
+  "automationMode": "AUTO_UNTIL_GATE",
+  "platforms": [
+    "DOUYIN",
+    "XIAOHONGSHU"
+  ],
+  "accountProfileRevision": "profile_demo_v1",
+  "budget": {
+    "currency": "CNY",
+    "limit": 100,
+    "isIllustrative": true
+  },
+  "nodeOverrides": {
+    "N22": {
+      "TEXT_REASONING": {
+        "modelId": "model_writer_example",
+        "presetId": "preset_writing_example"
+      }
+    }
+  },
+  "externalExecutionEnabled": false,
+  "remoteEnvironmentId": null,
+  "status": "DRAFT"
+}

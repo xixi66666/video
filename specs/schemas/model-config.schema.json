@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Model configuration documentation example",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "documentationOnly",
+    "providers",
+    "models",
+    "presets",
+    "routing",
+    "execution"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "documentationOnly": {
+      "type": "boolean"
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "adapter",
+          "baseUrl",
+          "credentialRef",
+          "enabled"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "adapter": {
+            "enum": [
+              "CHAT_COMPLETIONS_COMPATIBLE",
+              "RESPONSES",
+              "ANTHROPIC_MESSAGES",
+              "GEMINI_GENERATE_CONTENT",
+              "CUSTOM_HTTP",
+              "LOCAL_GATEWAY"
+            ]
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "endpointPath": {
+            "type": "string"
+          },
+          "credentialRef": {
+            "type": "string",
+            "pattern": "^secret://"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "implementationStatus": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "providerId",
+          "remoteModelId",
+          "capabilities",
+          "verifiedCapabilities",
+          "enabled"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": "string"
+          },
+          "remoteModelId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "TEXT_REASONING",
+                "VISION_UNDERSTANDING",
+                "ASR",
+                "OCR",
+                "AUDIO_UNDERSTANDING",
+                "EMBEDDING",
+                "RERANKING",
+                "TTS",
+                "FORCED_ALIGNMENT",
+                "VAD",
+                "DIARIZATION",
+                "SPEECH_ENHANCEMENT",
+                "SOURCE_SEPARATION",
+                "MUSIC_GENERATION",
+                "SFX_GENERATION",
+                "VOICE_CONVERSION",
+                "IMAGE_GENERATION",
+                "IMAGE_EDITING",
+                "VIDEO_GENERATION",
+                "VIDEO_EDITING",
+                "AVATAR_LIPSYNC",
+                "SEGMENTATION",
+                "DETECTION_TRACKING",
+                "RESTORATION_UPSCALE",
+                "FRAME_INTERPOLATION"
+              ]
+            }
+          },
+          "verifiedCapabilities": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "TEXT_REASONING",
+                "VISION_UNDERSTANDING",
+                "ASR",
+                "OCR",
+                "AUDIO_UNDERSTANDING",
+                "EMBEDDING",
+                "RERANKING",
+                "TTS",
+                "FORCED_ALIGNMENT",
+                "VAD",
+                "DIARIZATION",
+                "SPEECH_ENHANCEMENT",
+                "SOURCE_SEPARATION",
+                "MUSIC_GENERATION",
+                "SFX_GENERATION",
+                "VOICE_CONVERSION",
+                "IMAGE_GENERATION",
+                "IMAGE_EDITING",
+                "VIDEO_GENERATION",
+                "VIDEO_EDITING",
+                "AVATAR_LIPSYNC",
+                "SEGMENTATION",
+                "DETECTION_TRACKING",
+                "RESTORATION_UPSCALE",
+                "FRAME_INTERPOLATION"
+              ]
+            }
+          },
+          "supportedParameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parameterMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "parameterMappingVerified": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "modelId",
+          "parameters"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "modelId": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "routing": {
+      "type": "object",
+      "required": [
+        "defaults",
+        "agentDefaults",
+        "projectOverrides",
+        "nodeOverrides",
+        "fallbacks",
+        "fallbackPolicy"
+      ]
+    },
+    "pricing": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "object",
+      "required": [
+        "networkEnabled",
+        "dryRun",
+        "snapshotOnDispatch"
+      ],
+      "properties": {
+        "networkEnabled": {
+          "type": "boolean"
+        },
+        "dryRun": {
+          "type": "boolean"
+        },
+        "snapshotOnDispatch": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

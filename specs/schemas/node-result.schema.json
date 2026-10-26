@@ -1,0 +1,2374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Node output envelope design contract",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "nodeId",
+    "scopeKey",
+    "inputRevisionHash",
+    "status",
+    "provenance"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "runId": {
+      "type": "string"
+    },
+    "nodeId": {
+      "type": "string",
+      "pattern": "^N[0-9]{2}$"
+    },
+    "scopeKey": {
+      "type": "string"
+    },
+    "inputRevisionHash": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "SUCCEEDED",
+        "FAILED",
+        "CANCELLED",
+        "UNKNOWN"
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "revision",
+        "status",
+        "payload"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "RESOURCE_PROFILE",
+            "AUDIENCE_PROFILE",
+            "POSITIONING",
+            "CONTENT_PILLARS",
+            "ACCOUNT_PROFILE",
+            "PRODUCTION_STANDARD",
+            "RAW_IDEA",
+            "IDEA_CONTEXT",
+            "AUDIENCE_PROBLEM",
+            "DEMAND_EVIDENCE",
+            "REFERENCE_ANALYSIS",
+            "ANGLE_OPTIONS",
+            "GREENLIGHT_DECISION",
+            "TOPIC_CARD",
+            "SOURCE_PACK",
+            "VALIDATION_RECORD",
+            "CORE_MESSAGE",
+            "FORMAT_PLAN",
+            "OUTLINE",
+            "OPENING_OPTIONS",
+            "SCRIPT",
+            "READTHROUGH",
+            "STORYBOARD",
+            "SETUP_RECORD",
+            "DEMO_ENVIRONMENT",
+            "PRIMARY_FOOTAGE",
+            "NARRATION",
+            "SUPPORTING_ASSETS",
+            "INGEST_MANIFEST",
+            "ROUGH_CUT",
+            "FINE_CUT",
+            "SUBTITLE_TRACK",
+            "GRAPHICS",
+            "MIX",
+            "PICTURE_FINISH",
+            "MASTER",
+            "TITLE_OPTIONS",
+            "COVER",
+            "CAPTION",
+            "RELEASE_CHECK",
+            "UPLOAD_RECEIPT",
+            "PUBLISH_RECEIPT",
+            "PUBLICATION_STATUS",
+            "FEEDBACK_DIGEST",
+            "METRIC_SNAPSHOT",
+            "PERFORMANCE_REVIEW",
+            "IMPROVEMENT_DECISION",
+            "LIBRARY_MANIFEST",
+            "BUSINESS_REVIEW"
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "enum": [
+            "DRAFT",
+            "TECH_CHECKED",
+            "ACCEPTED",
+            "REJECTED",
+            "NEEDS_REVALIDATION",
+            "SUPERSEDED"
+          ]
+        },
+        "sampleData": {
+          "type": "boolean"
+        },
+        "payload": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "BUSINESS_GOAL"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "objective",
+                  "timeBudget",
+                  "investmentBoundary"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "RESOURCE_PROFILE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "skills",
+                  "experiences",
+                  "resources",
+                  "privacyBoundaries"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AUDIENCE_PROFILE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "segments",
+                  "problems",
+                  "evidenceRefs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "POSITIONING"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "audience",
+                  "valuePromise",
+                  "credibility",
+                  "limitations"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CONTENT_PILLARS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "pillars",
+                  "topicExamples",
+                  "productionConstraints"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ACCOUNT_PROFILE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platforms",
+                  "profileDrafts",
+                  "identityStatus"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PRODUCTION_STANDARD"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "visualRules",
+                  "audioRules",
+                  "fileRules",
+                  "qualityRules"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "RAW_IDEA"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "rawContent",
+                  "inputMode",
+                  "capturedAt"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IDEA_CONTEXT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "trigger",
+                  "realScenario",
+                  "knownFacts",
+                  "openQuestions"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AUDIENCE_PROBLEM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "audience",
+                  "scenario",
+                  "problem",
+                  "expectedBenefit"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DEMAND_EVIDENCE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "sources",
+                  "observations",
+                  "sampleLimits",
+                  "hypotheses"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "REFERENCE_ANALYSIS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "references",
+                  "comparison",
+                  "unansweredQuestions"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ANGLE_OPTIONS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "options",
+                  "evidence",
+                  "productionEstimates",
+                  "recommendation"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GREENLIGHT_DECISION"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "decision",
+                  "rationale",
+                  "budgetLimit",
+                  "scope"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TOPIC_CARD"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "audience",
+                  "problem",
+                  "angle",
+                  "promise",
+                  "scope"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SOURCE_PACK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "sources",
+                  "claims",
+                  "cases",
+                  "rightsNotes"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "VALIDATION_RECORD"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "method",
+                  "inputs",
+                  "results",
+                  "limitations",
+                  "evidenceRefs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CORE_MESSAGE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "conclusion",
+                  "evidenceRefs",
+                  "conditions",
+                  "uncertainties"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "FORMAT_PLAN"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "contentMode",
+                  "format",
+                  "aspectRatio",
+                  "targetDurationMs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OUTLINE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "sections",
+                  "evidenceMapping",
+                  "estimatedDurationMs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OPENING_OPTIONS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "candidates",
+                  "selectedCandidateId",
+                  "promiseCheck"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SCRIPT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "segments",
+                  "claims",
+                  "sourceRefs",
+                  "estimatedDurationMs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "READTHROUGH"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "spokenScript",
+                  "pronunciationGuide",
+                  "timingEstimate",
+                  "previewRefs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "STORYBOARD"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "shots",
+                  "assetNeeds",
+                  "styleGuideRef",
+                  "animaticRef",
+                  "hardShotTest"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SETUP_RECORD"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "setupChecklist",
+                  "testClipRefs",
+                  "applicabilityReason"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DEMO_ENVIRONMENT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "scenario",
+                  "dataRefs",
+                  "privacyCheck",
+                  "readiness"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PRIMARY_FOOTAGE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "shotId",
+                  "candidates",
+                  "method",
+                  "captureNotes"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "NARRATION"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "trackId",
+                  "audioRef",
+                  "transcript",
+                  "alignment",
+                  "voiceAuthorization"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SUPPORTING_ASSETS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "shotId",
+                  "candidates",
+                  "sourceRecords",
+                  "continuityChecks"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "INGEST_MANIFEST"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "files",
+                  "checksums",
+                  "backupStatus",
+                  "shotLinks"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ROUGH_CUT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "timelineRef",
+                  "previewRef",
+                  "missingAssets"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "FINE_CUT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "timelineRef",
+                  "previewRef",
+                  "changeNotes"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SUBTITLE_TRACK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "subtitleRef",
+                  "transcript",
+                  "audioRevision",
+                  "checks"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GRAPHICS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "graphicsRefs",
+                  "textSourceRefs",
+                  "timing"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "MIX"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "audioRef",
+                  "mixSettings",
+                  "measurements",
+                  "rightsRefs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PICTURE_FINISH"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "pictureRef",
+                  "colorNotes",
+                  "frameChecks"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "MASTER"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "fileRef",
+                  "checksum",
+                  "exportPreset",
+                  "technicalReport"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TITLE_OPTIONS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platform",
+                  "candidates",
+                  "selectedTitle",
+                  "consistencyCheck"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "COVER"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platform",
+                  "imageRef",
+                  "textLayout",
+                  "cropChecks"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CAPTION"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platform",
+                  "text",
+                  "topics",
+                  "sourceRefs",
+                  "declarations"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "RELEASE_CHECK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "technicalChecks",
+                  "contentChecks",
+                  "rightsChecks",
+                  "releaseManifestHash"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UPLOAD_RECEIPT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platform",
+                  "accountId",
+                  "uploadStatus",
+                  "draftId",
+                  "manualInstructions"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PUBLISH_RECEIPT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platform",
+                  "accountId",
+                  "manifestHash",
+                  "submissionStatus",
+                  "remoteId"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PUBLICATION_STATUS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platform",
+                  "visibility",
+                  "status",
+                  "workUrl",
+                  "checkedAt"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "FEEDBACK_DIGEST"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "comments",
+                  "questions",
+                  "replyDrafts",
+                  "sentReceipts"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "METRIC_SNAPSHOT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "platform",
+                  "observedAt",
+                  "window",
+                  "metrics",
+                  "source"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PERFORMANCE_REVIEW"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "comparisons",
+                  "hypotheses",
+                  "confounders",
+                  "evidenceRefs"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IMPROVEMENT_DECISION"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "chosenChange",
+                  "reason",
+                  "measurementPlan",
+                  "nextIterationRef"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "LIBRARY_MANIFEST"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "assetRefs",
+                  "tags",
+                  "sourceLinks",
+                  "reuseConstraints"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "BUSINESS_REVIEW"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "required": [
+                  "period",
+                  "costs",
+                  "revenue",
+                  "outcomes",
+                  "decision"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "warnings": {
+      "type": "array"
+    },
+    "usage": {
+      "type": "object"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "externalRequestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "artifact"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "FAILED",
+              "UNKNOWN"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "error"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N02"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "RESOURCE_PROFILE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N03"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "AUDIENCE_PROFILE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N04"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "POSITIONING"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N05"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "CONTENT_PILLARS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N06"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "ACCOUNT_PROFILE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N07"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "PRODUCTION_STANDARD"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N08"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "RAW_IDEA"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N09"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "IDEA_CONTEXT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N10"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "AUDIENCE_PROBLEM"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N11"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "DEMAND_EVIDENCE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N12"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "REFERENCE_ANALYSIS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N13"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "ANGLE_OPTIONS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N14"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "GREENLIGHT_DECISION"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N15"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "TOPIC_CARD"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N16"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "SOURCE_PACK"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N17"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "VALIDATION_RECORD"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N18"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "CORE_MESSAGE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N19"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "FORMAT_PLAN"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N20"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "OUTLINE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N21"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "OPENING_OPTIONS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N22"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "SCRIPT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N23"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "READTHROUGH"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N24"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "STORYBOARD"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N25"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "SETUP_RECORD"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N26"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "DEMO_ENVIRONMENT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N27"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "PRIMARY_FOOTAGE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N28"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "NARRATION"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N29"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "SUPPORTING_ASSETS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N30"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "INGEST_MANIFEST"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N31"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "ROUGH_CUT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N32"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "FINE_CUT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N33"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "SUBTITLE_TRACK"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N34"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "GRAPHICS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N35"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "MIX"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N36"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "PICTURE_FINISH"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N37"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "MASTER"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N38"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "TITLE_OPTIONS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N39"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "COVER"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N40"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "CAPTION"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N41"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "RELEASE_CHECK"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N42"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "UPLOAD_RECEIPT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N43"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "PUBLISH_RECEIPT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N44"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "PUBLICATION_STATUS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N45"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "FEEDBACK_DIGEST"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N46"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "METRIC_SNAPSHOT"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N47"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "PERFORMANCE_REVIEW"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N48"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "IMPROVEMENT_DECISION"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N49"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "LIBRARY_MANIFEST"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "nodeId": {
+            "const": "N50"
+          },
+          "status": {
+            "const": "SUCCEEDED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact": {
+            "properties": {
+              "type": {
+                "const": "BUSINESS_REVIEW"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

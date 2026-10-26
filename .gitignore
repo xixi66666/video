@@ -1,33 +1,21 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+agent-runtime/.venv/
+agent-runtime/data/
+**/__pycache__/
+**/.pytest_cache/
+*.pyc
+.env.*
+!.env.example
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/ui-artifacts/
+frontend/*.tsbuildinfo
+backend/target/
+backend/data/
+.run/
+.tools/
+.cache/
+.env
+*.log
+.idea/
 .vscode/

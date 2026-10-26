@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "run_demo_n15",
+  "nodeId": "N15",
+  "scopeKey": "project:project_demo",
+  "inputRevisionHash": "example-hash-not-a-real-digest",
+  "status": "SUCCEEDED",
+  "artifact": {
+    "id": "artifact_demo",
+    "type": "TOPIC_CARD",
+    "revision": 1,
+    "status": "DRAFT",
+    "sampleData": true,
+    "payload": {
+      "audience": "希望整理会议材料的上班族",
+      "problem": "如何把模拟会议记录变成待办清单",
+      "angle": "展示操作并逐项核对",
+      "promise": "演示整理与核查方法",
+      "scope": "只演示模拟材料，不承诺任何工具始终准确"
+    }
+  },
+  "warnings": [],
+  "usage": {
+    "estimatedCost": null,
+    "actualCost": null,
+    "currency": "CNY"
+  },
+  "provenance": {
+    "source": "DOCUMENTATION_SAMPLE",
+    "modelSnapshotId": null
+  }
+}

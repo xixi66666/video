@@ -1,0 +1,18 @@
+{
+  "documentationOnly": true,
+  "mode": "AUTO_UNTIL_GATE",
+  "maxTasksPerSession": 20,
+  "maxAttemptsPerTask": 2,
+  "maxSessionMinutes": 30,
+  "maxConcurrentTasks": 2,
+  "limitsAreIllustrative": true,
+  "gateBypassAllowed": false,
+  "externalExecutionEnabled": false,
+  "toolInstallAllowed": false,
+  "publicReplyAuthorization": null,
+  "publishAuthorization": null,
+  "onUnknownExternalStatus": "RECONCILE_BEFORE_RETRY",
+  "onUnsupportedConnector": "WAIT_FOR_MANUAL_RESULT",
+  "onUnverifiedModel": "BLOCK_AND_OFFER_TEST",
+  "onCostUnknown": "REQUIRE_EXPLICIT_BOUNDED_AUTHORIZATION"
+}

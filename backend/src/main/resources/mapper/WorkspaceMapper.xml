@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.creator.workbench.persistence.WorkspaceMapper">
+ <select id="findWorkspace" resultType="cn.creator.workbench.persistence.WorkspaceRecord">SELECT id,payload,revision FROM workspace_document WHERE id=#{id}</select>
+ <insert id="insertWorkspace">INSERT INTO workspace_document(id,payload,revision) VALUES(#{id},#{payload},0)</insert>
+ <update id="updateWorkspace">UPDATE workspace_document SET payload=#{payload}, revision=revision+1, updated_at=CURRENT_TIMESTAMP WHERE id=#{id} AND revision=#{expectedRevision}</update>
+ <insert id="insertFile">INSERT INTO media_file(id,original_name,storage_name,media_type,byte_size,sha256) VALUES(#{id},#{originalName},#{storageName},#{mediaType},#{byteSize},#{sha256})</insert>
+ <select id="findFile" resultType="cn.creator.workbench.persistence.MediaRecord">SELECT id,original_name,storage_name,media_type,byte_size,sha256 FROM media_file WHERE id=#{id}</select>
+</mapper>

@@ -1,0 +1,98 @@
+# 04 模型选择、配置与路由
+
+## 1. 必须满足的用户要求
+
+用户有多个模型，系统不能只提供一个 API Key 或写死一个模型名。不同节点可使用不同服务商；同一能力可有多个候选；Agent 角色不是模型账户。界面必须支持手工登记，模型列表拉取仅为可选功能，不能把服务商不支持列举模型当成无法接入。
+
+本章是拟实现合同；`examples/model-config.example.json` 全部禁用、断网和 dryRun。占位 remoteModelId 不是可调用模型，能力和参数映射都尚未验证。
+
+## 2. 六层配置对象
+
+| 对象 | 内容 |
+| --- | --- |
+| Provider | 名称、适配器类型、baseUrl、认证引用、代理、限流、超时、可用状态、数据区域 |
+| Adapter | 请求转换、流式解析、错误规范化、工具调用/结构化输出能力、异步任务生命周期 |
+| Model | 本地 ID、真实 remoteModelId、显示名、输入/输出模态、上下文、限制和能力验证 |
+| Preset | 某模型的参数预设、版本、适用任务、成本边界 |
+| Binding | 全局/Agent/项目/节点按能力绑定模型与预设 |
+| RunSnapshot | 某次派发实际使用的服务商、模型、预设、参数、限制和版本；不可变 |
+
+一个服务商可有多个协议端点；一个模型可以声明多个能力。模型展示名可改，历史运行以稳定 ID 和快照追溯。模型停用不删除历史，但禁止新的派发；紧急撤销可阻止运行中的后续网络请求。
+
+## 3. 选择与继承规则
+
+低优先级 → 高优先级：**全局能力默认 → Agent 能力默认 → 项目能力覆盖 → 节点实例能力覆盖**。
+
+同级先选模型和预设，再合并该级允许的参数覆盖。移除覆盖是 INHERIT，明确的 null 与空字符串不能都当“继承”。必需参数不允许清空；字段约束由参数表单和服务端同时验证。参数换模型后，只迁移经新模型确认支持的字段，其余提示用户处理。
+
+一个节点可多能力绑定。例如 N28 的 TTS 用 A，ASR 用 B，FORCED_ALIGNMENT 用 C；不能只给节点存一个 model_id。媒体拼接、存储等节点不强行要求选择 LLM。
+
+前端展示：`当前节点 → 项目覆盖 → 写作 Agent 默认 → 全局默认`，选中来源高亮。执行前给出解析结果；禁止运行中因管理员修改默认值悄悄换模型。
+
+## 4. 能力表与筛选
+
+25 类分组见 `specs/capabilities.json`。必须进一步记录子能力：
+
+- TEXT_REASONING：文本、结构化 JSON、工具调用、流式、可配置推理参数等分别判断。
+- VISION_UNDERSTANDING：图片、视频、最大帧数、采样方式、是否能返回时间位置，不等同于 IMAGE_GENERATION。
+- ASR：中文/方言、时间戳粒度、说话人支持、音频限制。
+- TTS：语言、声音、语速、发音控制、返回对齐、声音授权与长文本分段。
+- IMAGE/VIDEO：参考图、遮罩、首尾帧、时长、画幅、种子、输出格式、音频是否生成等分别声明。
+
+每个能力状态：DECLARED、VERIFIED、FAILED、UNKNOWN；保存 tested_at、适配器版本、样例、结果与限制。可以为“未验证候选”做显式测试，但不能默认进入自动回退。测试本身可能计费，先展示测试范围与预算。
+
+## 5. 协议适配
+
+设计的适配器枚举：CHAT_COMPLETIONS_COMPATIBLE、RESPONSES、ANTHROPIC_MESSAGES、GEMINI_GENERATE_CONTENT、CUSTOM_HTTP、LOCAL_GATEWAY。它们都处于 DESIGNED；实际实现按用户首先登记的供应商排序。
+
+- Chat Completions 与 Responses 请求/返回结构不同，必须分开解析，不能只改 URL。
+- “兼容”端点也要验证模型列表、鉴权、自定义头、流式结束、工具调用和 JSON Schema 支持。
+- 内部统一参数不直接原样传供应商；例如 maxOutputTokens 的真实字段随协议和模型而变，映射必须验证。
+- 自定义头使用允许名单，敏感值采用 credentialRef；不能让模型产物任意覆盖 Host、认证或目标地址。
+- CUSTOM_HTTP 以声明式 JSONPath/模板映射和已审核转换器实现；不允许在表单中保存任意可执行代码。
+- 不支持原生严格结构化输出时，可采用提示词约束 + JSON 解析 + Schema 校验 + 有上限修复；对外标记可靠性差异。
+- 拒绝、截断、网络中断、部分输出都要单独处理；通过 JSON Schema 也不代表内容事实正确。
+
+OpenAI 官方资料区分结构化输出与工具调用，也区分 JSON 模式与 Schema 约束。其他供应商是否等价必须实测，不能据名称推断。来源见文档 12。
+
+## 6. 统一调用合同（内部设计）
+
+```text
+invoke(request) -> sync_result | external_job
+stream(request) -> normalized_events
+probe(profile, test_plan) -> capability_test_result
+estimate(request) -> cost_estimate | unknown
+query(external_job_ref) -> execution_status
+cancel(external_job_ref) -> accepted | unsupported | unknown
+collect(external_job_ref) -> artifact_manifest
+```
+
+request 至少包含 task_id、attempt_id、idempotency_key、capability、model_snapshot_id、input_artifact_refs、参数、输出 schema、预算边界。不是所有模型提供 query/cancel；同步和异步由适配器明确报告，不能假造方法。
+
+normalized_result：文本/结构化数据/文件清单、usage、finish_reason、warnings、外部请求 ID 和 provenance。不得依赖统一的 choices 字段读取所有供应商结果。
+
+## 7. 连接测试流程
+
+保存草稿 → 检查地址与认证引用 → 连通性 → 用户选择小额测试 → 验证必要能力 → 保存测试记录 → 用户启用 → 绑定默认或节点 → dryRun 解析 → 真正执行。
+
+失败必须区分 DNS/网络、证书、认证、配额、模型不存在、不支持参数、内容拒绝、输出格式和超时。连通性成功不是所有能力验证通过。
+
+## 8. 路由与回退
+
+先按硬约束过滤：能力、输入模态与大小、上下文、状态、价格边界、地域/数据策略、授权范围。再按用户显式偏好、任务质量记录、延迟、成本排序。初期不要构建不可解释的自动选模算法。
+
+默认：只在预批准候选中回退；跨供应商传输资料需要用户预先允许；最多尝试次数受项目预算和策略限制。超时且外部受理状态未知时，先 query/reconcile，不直接切换另一家重复付费。
+
+能力不匹配和认证错误不应机械重试。内容不合格优先生成修改建议；已达到重试预算就转人工。
+
+## 9. 价格与预算
+
+费用单位可为 token、字符、秒、张、任务或 GPU 时长；配置货币、计费阶梯、价格来源和生效时间。未知实际费用为 null，不是 0。手工登记价格需注明，不引用虚构实时价格。
+
+派发前事务预留估算上界；完成后按 usage 与账单依据结算，释放剩余预留。无法获得上界时需要明确的小额次数授权，不能无限自动执行。汇率转换记录当时汇率与来源。
+
+## 10. 迁移与验收
+
+导出不含密钥的配置包；目标机重新映射 credentialRef、访问地址、代理与存储根目录，并重新验证能力。保持业务 ID 不变，避免破坏历史引用。
+
+必须验收：两个不同协议、同能力多模型、N28 多能力选模、节点覆盖优先级、参数不兼容提示、默认值变更不影响已运行任务、停用模型、禁用回退跨域、价格未知、认证失败与流式截断。

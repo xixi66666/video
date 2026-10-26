@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "run_demo_failure",
+  "nodeId": "N22",
+  "scopeKey": "project:project_demo",
+  "inputRevisionHash": "example-hash-not-a-real-digest",
+  "status": "FAILED",
+  "error": {
+    "code": "CAPABILITY_MISMATCH",
+    "message": "文档示例：候选模型未通过所需能力测试。",
+    "retryable": false,
+    "externalRequestId": null
+  },
+  "warnings": [],
+  "usage": {
+    "estimatedCost": null,
+    "actualCost": null,
+    "currency": "CNY"
+  },
+  "provenance": {
+    "source": "DOCUMENTATION_SAMPLE",
+    "modelSnapshotId": null
+  }
+}

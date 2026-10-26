@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentationOnly": true,
+  "providers": [
+    {
+      "id": "provider_text_example",
+      "name": "用户文本模型服务示例",
+      "adapter": "CHAT_COMPLETIONS_COMPATIBLE",
+      "baseUrl": "https://text-provider.example.invalid/v1",
+      "endpointPath": "/chat/completions",
+      "credentialRef": "secret://providers/text-example",
+      "enabled": false,
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "provider_responses_example",
+      "name": "另一种文本协议示例",
+      "adapter": "RESPONSES",
+      "baseUrl": "https://responses-provider.example.invalid/v1",
+      "endpointPath": "/responses",
+      "credentialRef": "secret://providers/responses-example",
+      "enabled": false,
+      "implementationStatus": "DESIGNED"
+    },
+    {
+      "id": "provider_tts_example",
+      "name": "语音服务协议示例",
+      "adapter": "CUSTOM_HTTP",
+      "baseUrl": "https://speech-provider.example.invalid",
+      "endpointPath": "/replace-with-verified-path",
+      "credentialRef": "secret://providers/speech-example",
+      "enabled": false,
+      "implementationStatus": "DESIGNED"
+    }
+  ],
+  "models": [
+    {
+      "id": "model_writer_example",
+      "providerId": "provider_text_example",
+      "remoteModelId": "REPLACE_WITH_YOUR_REAL_MODEL_ID",
+      "displayName": "写作模型（占位）",
+      "capabilities": [
+        "TEXT_REASONING"
+      ],
+      "verifiedCapabilities": [],
+      "supportedParameters": [
+        "temperature",
+        "maxOutputTokens"
+      ],
+      "parameterMapping": {
+        "temperature": "temperature",
+        "maxOutputTokens": "max_tokens"
+      },
+      "parameterMappingVerified": false,
+      "enabled": false
+    },
+    {
+      "id": "model_reviewer_example",
+      "providerId": "provider_responses_example",
+      "remoteModelId": "REPLACE_WITH_YOUR_REVIEW_MODEL_ID",
+      "displayName": "审阅模型（占位）",
+      "capabilities": [
+        "TEXT_REASONING",
+        "VISION_UNDERSTANDING"
+      ],
+      "verifiedCapabilities": [],
+      "supportedParameters": [
+        "maxOutputTokens"
+      ],
+      "parameterMapping": {
+        "maxOutputTokens": "max_output_tokens"
+      },
+      "parameterMappingVerified": false,
+      "enabled": false
+    },
+    {
+      "id": "model_tts_example",
+      "providerId": "provider_tts_example",
+      "remoteModelId": "REPLACE_WITH_YOUR_TTS_MODEL_ID",
+      "displayName": "配音模型（占位）",
+      "capabilities": [
+        "TTS"
+      ],
+      "verifiedCapabilities": [],
+      "supportedParameters": [
+        "voiceId",
+        "speed"
+      ],
+      "parameterMapping": {},
+      "parameterMappingVerified": false,
+      "enabled": false
+    }
+  ],
+  "presets": [
+    {
+      "id": "preset_writing_example",
+      "modelId": "model_writer_example",
+      "parameters": {
+        "temperature": 0.6,
+        "maxOutputTokens": 4096
+      }
+    }
+  ],
+  "routing": {
+    "defaults": {
+      "TEXT_REASONING": {
+        "modelId": "model_writer_example",
+        "presetId": "preset_writing_example"
+      }
+    },
+    "agentDefaults": {
+      "WRITER": {
+        "TEXT_REASONING": {
+          "modelId": "model_writer_example",
+          "presetId": "preset_writing_example"
+        }
+      }
+    },
+    "projectOverrides": {},
+    "nodeOverrides": {},
+    "fallbacks": {
+      "model_writer_example": [
+        "model_reviewer_example"
+      ]
+    },
+    "fallbackPolicy": {
+      "maxCandidates": 2,
+      "requireVerifiedCapability": true,
+      "allowProviderBoundaryChange": false
+    }
+  },
+  "pricing": {
+    "currency": "CNY",
+    "entries": [],
+    "unknownCostPolicy": "REQUIRE_BUDGET_CONFIRMATION"
+  },
+  "execution": {
+    "networkEnabled": false,
+    "dryRun": true,
+    "snapshotOnDispatch": true
+  }
+}
