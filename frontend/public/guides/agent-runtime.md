@@ -55,13 +55,13 @@ cd ..
 
 Java H2/MySQL 业务库增加 `agent_run`，与旧聚合、素材表并存；Python `runs.sqlite` 保存运行、单调序号事件、不可变候选/评审版本，`checkpoints.sqlite` 保存 LangGraph 检查点。迁移只建表，不删除旧项目、素材、任务或 N01 归档。
 
-运行状态包括排队、运行、等待采纳、通过、拒绝、取消、失败、返工耗尽、UNKNOWN。等待人工的 checkpoint 重启后可继续；进程中断时 RUNNING 变为 UNKNOWN，不自动重做可能已计费的调用。QUEUED 可重投。当前不提供从未知供应商结果自动恢复或盲目重试。
+运行状态包括排队、运行、等待采纳、通过、拒绝、取消、失败、返工耗尽、UNKNOWN；投递层另有投递失败、采纳同步失败、拒绝同步失败。等待人工的 checkpoint 重启后可继续；进程中断时 RUNNING 变为 UNKNOWN，不自动重做可能已计费的调用。QUEUED 可重投。400/404/409/413 等永久投递错误停止重投并展示最后原因，可由操作者重试；503 等临时错误保留意图。当前不提供从未知供应商结果自动恢复或盲目重试。
 
 取消在模型调用、工具调用、候选提交之间检查；不会声称已经撤销供应商正在进行的请求。删除是软删除，不取消任务、不删除产物；排队或运行任务先取消，记录可恢复。
 
-上限：两个本机 worker；每运行最多 30 次模型调用、20,000 累积返回 usage token、每次最多 1,200 输出 token、180 秒、一次返工。调用次数在调用前检查；token 是已完成调用的统计边界，单次响应可能使累计超限，不能冒充供应商强制费用预算。运行时间在安全点检查，单次模型请求另有超时。超时或供应商异常不自动重试。
+上限：两个本机 worker；每运行最多 30 次模型调用、20,000 累积返回 usage token、每次最多 1,200 输出 token、180 秒、一次返工。输入超过 400,000 字节在 Java 受理前拒绝。调用次数在调用前检查；token 是已完成调用的统计边界，单次响应可能使累计超限，不能冒充供应商强制费用预算。运行时间在安全点检查，单次模型请求另有超时。超时或供应商异常不自动重试。LIVE 模式在受理前校验模型参数，当前 Agent 适配器只接受 `temperature/top_p`；不满足时返回明确错误，不进入 outbox。
 
-事件当前通过 2.5 秒轮询展示。尚未实现 SSE、生产队列/租约与多副本调度、跨服务 inbox、PostgreSQL checkpointer、多租户、真实费用预留、按 SHOT/TRACK/PLATFORM 拆分实例以及领域评测发布门禁。不要把本机运行版描述为上述生产能力已完成。
+事件当前通过 2.5 秒轮询展示。尚未实现 SSE、生产队列/租约与多副本调度、跨服务 inbox、PostgreSQL checkpointer、多租户、真实费用预留、按 SHOT/TRACK/PLATFORM 拆分业务节点实例以及领域评测发布门禁。画面需求与采用已独立于节点产物；PLATFORM 拍板已按平台记录，但发布节点仍是项目级。不要把本机运行版描述为上述生产能力已完成。P0/P1/P2 修复及剩余作用域边界见 [ds 分支审查修复](25-branch-review-fixes.md)。
 
 ## 接口
 
@@ -74,7 +74,7 @@ Java 对浏览器提供 JSON envelope `{code,message,data,requestId}`，错误�
 | POST `/api/v1/agent-runs` | `{id:"run_<UUID>",projectId,nodeId,mode:"FIXTURE"}` | 幂等受理；依赖或拍板缺失返回 409 |
 | GET `/api/v1/agent-runs/{id}` | 运行 ID | 运行、候选版本、评审和单调序号事件 |
 | POST `/api/v1/agent-runs/{id}/decision` | `{decision:"ACCEPT"或"REJECT"}` | 采纳到草稿或拒绝；过期输入返回 409 |
-| POST `/api/v1/agent-runs/{id}/control` | `{action:"CANCEL"或"DELETE"或"RESTORE"}` | 安全点取消、软删除与恢复 |
+| POST `/api/v1/agent-runs/{id}/control` | `{action:"CANCEL"、"DELETE"、"RESTORE"或"RETRY"}` | 安全点取消、软删除、恢复与重试投递 |
 
 ## 验证
 
@@ -92,4 +92,4 @@ python scripts/validate_docs.py
 python scripts/render_node_catalog.py --check
 ```
 
-浏览器联调测试需要三个服务，建议使用隔离测试数据库和独立端口，不在用户工作区创建验收作品。实现计划及未交付项见 [实施方案](18-multi-agent-implementation-plan.md)；完整节点映射见 [49 节点矩阵](20-node-agent-migration-matrix.md)。
+普通 `npx playwright test` 只运行浏览器本地模式，跳过后端/Agent 用例。完整联调请在 frontend 执行 `npm run test:e2e:backend`，脚本自动启动三个隔离服务，使用内存业务库与临时文件/运行库，写入前核对实例标记；不需要手工配置服务地址。详见 [测试隔离与修复说明](22-audit-fixes.md)。实现计划及未交付项见 [实施方案](18-multi-agent-implementation-plan.md)；完整节点映射见 [49 节点矩阵](20-node-agent-migration-matrix.md)。

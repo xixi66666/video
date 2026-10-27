@@ -27,5 +27,14 @@ public class MediaService {
         try{mapper.insertFile(record);}catch(RuntimeException e){Files.deleteIfExists(target);throw e;}return record;
     }
     public MediaRecord find(String id){if(!id.matches("[a-zA-Z0-9_-]{1,64}"))throw new BusinessException(404,"素材不存在");var record=mapper.findFile(id);if(record==null)throw new BusinessException(404,"素材不存在");return record;}
+    /** 正式采用前重新核对原件，避免缺失或被外部修改的文件进入采用清单。 */
+    public void verify(MediaRecord record){
+        var resource=resource(record);
+        try(var input=resource.getInputStream()){
+            var digest=MessageDigest.getInstance("SHA-256");byte[] buffer=new byte[8192];int count;long size=0;
+            while((count=input.read(buffer))!=-1){digest.update(buffer,0,count);size+=count;}
+            if(size!=record.getByteSize()||!HexFormat.of().formatHex(digest.digest()).equals(record.getSha256()))throw new BusinessException(409,"素材原件已变化，请重新上传并登记候选");
+        }catch(IOException e){throw new BusinessException(404,"素材原件无法读取，请重新上传");}catch(NoSuchAlgorithmException e){throw new IllegalStateException(e);}
+    }
     public Resource resource(MediaRecord record){Path path=root.resolve(record.getStorageName()).normalize();if(!path.startsWith(root)||!Files.isRegularFile(path))throw new BusinessException(404,"素材原件不存在");return new FileSystemResource(path);}
 }

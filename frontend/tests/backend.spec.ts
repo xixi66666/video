@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test'
-const api=process.env.PLAYWRIGHT_API_URL??'http://127.0.0.1:8088'
+import {api,useIsolatedBackend} from './support/isolated-backend'
+useIsolatedBackend()
 test('后端模式下创建、节点保存与刷新恢复',async({page,request})=>{
  const health=await request.get(api+'/api/v1/health');expect(health.ok()).toBe(true)
  await page.goto('/');await expect(page.locator('.workspace-note')).toContainText('本机服务已连接')

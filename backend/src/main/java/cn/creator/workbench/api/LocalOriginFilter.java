@@ -12,8 +12,10 @@ import java.util.*;
 @Component
 public class LocalOriginFilter extends OncePerRequestFilter {
     private final Set<String> allowed;
+    @Value("${workbench.test-instance-id:}") private String testInstanceId;
     public LocalOriginFilter(@Value("${workbench.allowed-origins}") String origins){allowed=new HashSet<>(Arrays.asList(origins.split(",")));}
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws ServletException,IOException{
+        if(!testInstanceId.isBlank())response.setHeader("X-Workbench-Test-Instance",testInstanceId);
         String origin=request.getHeader("Origin");
         if(!Set.of("GET","HEAD","OPTIONS").contains(request.getMethod())&&origin!=null&&!allowed.contains(origin)){response.sendError(403,"请求来源未获允许");return;}
         response.setHeader("X-Content-Type-Options","nosniff");chain.doFilter(request,response);

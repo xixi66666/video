@@ -5,7 +5,7 @@ import {uid,type Model} from '../lib/domain'
 import Dialog from '../components/Dialog.vue'
 import Icon from '../components/Icon.vue'
 import ModelDefaultSelect from '../components/ModelDefaultSelect.vue'
-const store=useWorkbench(),open=ref(false),query=ref(''),capFilter=ref(''),params=ref('{\n  "temperature": 0.6,\n  "maxOutputTokens": 4096\n}'),editing=ref('')
+const store=useWorkbench(),open=ref(false),query=ref(''),capFilter=ref(''),params=ref('{\n  "temperature": 0.6\n}'),editing=ref('')
 const blank=()=>({id:uid('model'),name:'',provider:'',protocol:'CHAT_COMPLETIONS_COMPATIBLE',baseUrl:'',remoteModelId:'',credentialRef:'CREATOR_MODEL_KEY',capabilities:['TEXT_REASONING'],parameters:{},enabled:false,verified:false})
 const form=reactive<Model>(blank());const protocols=['CHAT_COMPLETIONS_COMPATIBLE','RESPONSES','ANTHROPIC_MESSAGES','GEMINI_GENERATE_CONTENT','CUSTOM_HTTP','LOCAL_GATEWAY']
 const filtered=computed(()=>store.state.models.filter(m=>(m.name+m.provider+m.remoteModelId).toLowerCase().includes(query.value.toLowerCase())&&(!capFilter.value||m.capabilities.includes(capFilter.value))))

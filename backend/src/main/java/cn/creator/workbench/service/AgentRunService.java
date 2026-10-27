@@ -10,14 +10,17 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 业务快照、命令 outbox、采纳事务与模型继承规则。Agent 无权直接修改业务状态。 */
 @Service
 public class AgentRunService {
+    private static final int MAX_INPUT_BYTES=400_000;
     private final WorkspaceService workspace;
     private final AgentRunMapper mapper;
     private final AgentRuntimeClient runtime;
     private final Gson gson=new Gson();
+    private final AtomicBoolean dispatching=new AtomicBoolean();
     public AgentRunService(WorkspaceService workspace,AgentRunMapper mapper,AgentRuntimeClient runtime){this.workspace=workspace;this.mapper=mapper;this.runtime=runtime;}
 
     public JsonObject readiness(){
@@ -41,6 +44,7 @@ public class AgentRunService {
         if(project==null||node==null)throw bad("作品或节点不存在");
         workspace.requireExecutable(project,nodeId);
         var input=input(state,project,node);
+        if(input.toString().getBytes(StandardCharsets.UTF_8).length>MAX_INPUT_BYTES)throw new BusinessException(413,"节点输入过大，请缩减依赖产物或材料后再运行。");
         var payload=new JsonObject();payload.addProperty("id",id);payload.addProperty("projectId",projectId);payload.addProperty("mode",mode);
         payload.add("node",node);payload.add("input",input);payload.addProperty("inputFingerprint",sha(input));
         payload.addProperty("executionMode",planOnly(node)?"PLAN_ONLY":"GENERATE_TEXT");
@@ -53,26 +57,46 @@ public class AgentRunService {
                 var model=entry.getValue().getAsJsonObject();
                 if(!model.has("id")||!authorized.contains(model.get("id").getAsString()))throw new BusinessException(409,"主管、专家和评审模型都必须配置，并由服务器白名单明确授权。");
                 if(!Set.of("CHAT_COMPLETIONS_COMPATIBLE","RESPONSES").contains(model.get("protocol").getAsString()))throw new BusinessException(409,"所选协议尚无 Agent 调用适配器。");
+                ModelParameterPolicy.validateLiveAgent(model.get("parameters"));
             }
         }
         payload.add("limits",JsonParser.parseString("{\"maxModelCalls\":30,\"maxTotalTokens\":20000,\"maxOutputTokens\":1200,\"maxSeconds\":180,\"maxReworks\":1}"));
-        var record=new AgentRunRecord();record.setId(id);record.setProjectId(projectId);record.setNodeId(nodeId);record.setPayload(payload.toString());record.setInputFingerprint(sha(input));record.setState("PENDING_SUBMISSION");record.setCreatedAt(Instant.now().toString());mapper.insert(record);
+        var record=new AgentRunRecord();record.setId(id);record.setProjectId(projectId);record.setNodeId(nodeId);record.setPayload(payload.toString());record.setInputFingerprint(sha(input));record.setState("PENDING_SUBMISSION");record.setCreatedAt(Instant.now().toString());record.setDispatchAttempts(0);mapper.insert(record);
         return summary(record);
     }
 
     /** 事务提交后再投递。超时重投相同 run ID，由运行服务持久幂等，不新建计费任务。 */
     @Scheduled(fixedDelay=2000)
-    public synchronized void dispatch(){
-        for(var record:mapper.list()){
-            try{
-                if(record.getState().equals("PENDING_SUBMISSION")){runtime.post("/runs",JsonParser.parseString(record.getPayload()).getAsJsonObject());mapper.state(record.getId(),"SUBMITTED");}
-                if(Set.of("ACCEPT_PENDING_SYNC","REJECT_PENDING_SYNC").contains(record.getState())){
-                    var command=new JsonObject();command.addProperty("decision",record.getState().startsWith("ACCEPT")?"ACCEPT":"REJECT");
-                    runtime.post("/runs/"+record.getId()+"/decision",command);mapper.state(record.getId(),record.getState().startsWith("ACCEPT")?"ADOPTED":"REJECTED");
+    public void dispatch(){
+        // 调度器本身是单线程；这里再防止测试或手工调用重叠。HTTP 调用不再持有 create/decide 的锁。
+        if(!dispatching.compareAndSet(false,true))return;
+        try{
+            for(var record:mapper.list()){
+                try{
+                    if(record.getState().equals("PENDING_SUBMISSION")){runtime.post("/runs",JsonParser.parseString(record.getPayload()).getAsJsonObject());mapper.state(record.getId(),"SUBMITTED");mapper.clearDispatch(record.getId(),Instant.now().toString());}
+                    else if(Set.of("ACCEPT_PENDING_SYNC","REJECT_PENDING_SYNC").contains(record.getState())){
+                        var command=new JsonObject();command.addProperty("decision",record.getState().startsWith("ACCEPT")?"ACCEPT":"REJECT");
+                        runtime.post("/runs/"+record.getId()+"/decision",command);mapper.state(record.getId(),record.getState().startsWith("ACCEPT")?"ADOPTED":"REJECTED");mapper.clearDispatch(record.getId(),Instant.now().toString());
+                    }
+                }catch(BusinessException failure){
+                    // 记录最后一次真实原因；永久错误停止重投，避免每 2 秒重复撞同一面墙。
+                    String message=failure.getMessage()==null?"投递失败":failure.getMessage();if(message.length()>500)message=message.substring(0,500);
+                    String at=Instant.now().toString();
+                    if(mapper.bumpDispatch(record.getId(),message,at)==0)mapper.insertDispatch(record.getId(),message,at);
+                    if(permanent(failure.getStatus())){
+                        String next=switch(record.getState()){
+                            case "PENDING_SUBMISSION"->"SUBMISSION_FAILED";
+                            case "ACCEPT_PENDING_SYNC"->"ADOPTED_SYNC_FAILED";
+                            case "REJECT_PENDING_SYNC"->"REJECTED_SYNC_FAILED";
+                            default->null;
+                        };
+                        if(next!=null)mapper.state(record.getId(),next);
+                    }
                 }
-            }catch(BusinessException ignored){/* outbox 保留原意图；无隐式模型重试、无敏感日志。 */}
-        }
+            }
+        }finally{dispatching.set(false);}
     }
+    private static boolean permanent(int status){return Set.of(400,401,403,404,409,413,422).contains(status);}
 
     public JsonArray list(){var list=new JsonArray();mapper.list().forEach(r->list.add(summary(r)));return list;}
     public JsonObject detail(String id){var record=require(id);var result=summary(record);try{result.add("runtime",runtime.get("/runs/"+id));result.add("events",runtime.get("/runs/"+id+"/events"));}catch(BusinessException e){result.addProperty("runtimeMessage",e.getMessage());}return result;}
@@ -104,6 +128,15 @@ public class AgentRunService {
             case "CANCEL" -> {if(!Set.of("PENDING_SUBMISSION","SUBMITTED").contains(record.getState()))throw new BusinessException(409,"此任务不能取消");if(record.getState().equals("SUBMITTED"))runtime.post("/runs/"+id+"/cancel",new JsonObject());mapper.state(id,"CANCELLED");}
             case "DELETE" -> {if(record.getState().equals("PENDING_SUBMISSION"))throw new BusinessException(409,"请先取消排队任务再删除");if(record.getState().equals("SUBMITTED")){String status=runtime.get("/runs/"+id).getAsJsonObject().get("status").getAsString();if(Set.of("QUEUED","RUNNING").contains(status))throw new BusinessException(409,"请先取消运行再删除记录");}mapper.visibility(id,Instant.now().toString());}
             case "RESTORE" -> mapper.visibility(id,null);
+            case "RETRY" -> {
+                String next=switch(record.getState()){
+                    case "SUBMISSION_FAILED"->"PENDING_SUBMISSION";
+                    case "ADOPTED_SYNC_FAILED"->"ACCEPT_PENDING_SYNC";
+                    case "REJECTED_SYNC_FAILED"->"REJECT_PENDING_SYNC";
+                    default->throw new BusinessException(409,"当前状态不能重试投递");
+                };
+                mapper.state(id,next);mapper.clearDispatch(id,Instant.now().toString());
+            }
             default -> throw bad("控制命令无效");
         }
         return summary(require(id));
@@ -114,14 +147,15 @@ public class AgentRunService {
     private static JsonObject input(JsonObject state,JsonObject project,JsonObject node){
         var result=new JsonObject();for(String k:List.of("id","title","brief","template","platforms"))result.add(k,project.get(k));result.add("creatorProfile",state.get("profile"));
         var deps=new JsonObject();for(var d:node.getAsJsonArray("dependsOn"))deps.add(d.getAsString(),project.getAsJsonObject("nodes").get(d.getAsString()));result.add("dependencies",deps);
-        result.add("currentNode",project.getAsJsonObject("nodes").get(node.get("id").getAsString()));result.add("approvals",project.get("approvals"));return result;
+        result.add("currentNode",project.getAsJsonObject("nodes").get(node.get("id").getAsString()));result.add("approvals",project.get("approvals"));
+        var visuals=VisualCandidateService.inputs(project,node.get("id").getAsString());if(visuals!=null)result.add("visualInputs",visuals);return result;
     }
     static JsonObject resolveModel(JsonObject state,JsonObject project,String role,String nodeId){
         var maps=new ArrayList<JsonObject>();if(nodeId!=null)maps.add(object(project.getAsJsonObject("nodeBindings"),nodeId));maps.add(project.getAsJsonObject("bindings"));maps.add(object(state.getAsJsonObject("agentBindings"),role));maps.add(state.getAsJsonObject("globalBindings"));
         for(var map:maps)for(String key:List.of("TEXT_REASONING","$default")){if(map.has(key)){var model=find(state.getAsJsonArray("models"),map.get(key).getAsString());if(model!=null&&model.getAsJsonArray("capabilities").asList().stream().anyMatch(c->c.getAsString().equals("TEXT_REASONING")))return model.deepCopy();}}
         return new JsonObject();
     }
-    static boolean planOnly(JsonObject node){return Set.of("CAPTURE","AUDIO","IMAGE","VIDEO","EDITOR","PUBLISHER").contains(node.get("agentRole").getAsString())||Set.of("N30","N41","N44","N45","N46","N49").contains(node.get("id").getAsString());}
+    static boolean planOnly(JsonObject node){var kind=node.get("executorKind");return kind!=null&&!"AGENT".equals(kind.getAsString());}
     private static JsonObject object(JsonObject parent,String key){return parent.has(key)?parent.getAsJsonObject(key):new JsonObject();}
     private static JsonObject find(JsonArray array,String id){for(var item:array){var o=item.getAsJsonObject();if(o.get("id").getAsString().equals(id))return o;}return null;}
     private static String sha(JsonObject value){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.toString().getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}

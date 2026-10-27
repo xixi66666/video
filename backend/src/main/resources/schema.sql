@@ -23,3 +23,9 @@ CREATE TABLE IF NOT EXISTS agent_run (
  created_at VARCHAR(50) NOT NULL,
  deleted_at VARCHAR(50)
 );
+CREATE TABLE IF NOT EXISTS agent_run_dispatch (
+ run_id VARCHAR(100) NOT NULL PRIMARY KEY,
+ attempts INT NOT NULL DEFAULT 0,
+ last_error VARCHAR(500),
+ updated_at VARCHAR(50) NOT NULL
+);

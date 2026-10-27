@@ -2,11 +2,11 @@
 import {computed,onMounted,onUnmounted,ref} from 'vue'
 import {gsap} from 'gsap'
 import {useWorkbench} from '../stores/workbench'
-import {progress,validApproval} from '../lib/domain'
+import {progress,validApproval,projectActive} from '../lib/domain'
 import Icon from '../components/Icon.vue'
 import ProjectCard from '../components/ProjectCard.vue'
 const emit=defineEmits<{create:[]}>(),store=useWorkbench(),root=ref<HTMLElement>(),idea=ref('');let context:gsap.Context|undefined
-const completed=computed(()=>store.state.projects.reduce((sum,p)=>sum+progress(p),0));const pending=computed(()=>store.state.projects.flatMap(p=>store.catalog.gates.filter(g=>g.after.every(id=>p.nodes[id].status==='COMPLETED')&&!validApproval(p,g)).map(g=>({project:p,gate:g}))).slice(0,3))
+const completed=computed(()=>store.state.projects.reduce((sum,p)=>sum+progress(p),0));const pending=computed(()=>store.state.projects.filter(projectActive).flatMap(p=>store.catalog.gates.filter(g=>g.after.every(id=>p.nodes[id].status==='COMPLETED')&&!validApproval(p,g)).map(g=>({project:p,gate:g}))).slice(0,3))
 const quickStages=[{name:'灵感与选题',note:'找到值得表达的事',icon:'Lightbulb',stage:'IDEATION',range:'08—15'},{name:'脚本与分镜',note:'把想法讲清楚',icon:'FileText',stage:'PREPRODUCTION',range:'16—24'},{name:'素材与制作',note:'让画面发生',icon:'Clapperboard',stage:'PRODUCTION',range:'25—30'},{name:'剪辑与包装',note:'认真打磨每一帧',icon:'Scissors',stage:'POSTPRODUCTION',range:'31—41'},{name:'发布与复盘',note:'让作品遇见观众',icon:'Send',stage:'DELIVERY',range:'42—50'}]
 async function capture(){if(await store.command({type:'ADD_IDEA',payload:{text:idea.value}},'想法已收好，去灵感收件箱继续整理'))idea.value=''}
 onMounted(()=>{if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)context=gsap.context(()=>{gsap.fromTo('.journey-line-fill',{scaleX:0},{scaleX:1,duration:1.3,ease:'expo.out',delay:.15});gsap.fromTo('.journey-stop',{y:8,opacity:.65},{y:0,opacity:1,duration:.6,stagger:.07,ease:'power3.out'});gsap.to('.orbit-dot',{rotation:360,transformOrigin:'-22px 0px',duration:18,repeat:-1,ease:'none'})},root.value)});onUnmounted(()=>context?.revert())

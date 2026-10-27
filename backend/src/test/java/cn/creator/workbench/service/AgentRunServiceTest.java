@@ -54,6 +54,13 @@ class AgentRunServiceTest {
         var control=new JsonObject();control.addProperty("action","DELETE");service.control(id,control);assertNotNull(mapper.find(id).getDeletedAt());
         control.addProperty("action","RESTORE");service.control(id,control);assertNull(mapper.find(id).getDeletedAt());
     }
+    @Test void permanentDispatchFailureIsVisibleAndRetryable(){
+        when(runtime.post(anyString(),any())).thenThrow(new BusinessException(400,"测试永久投递错误"));
+        var p=request("N08");String id=p.get("id").getAsString();service.create(p);
+        service.dispatch();
+        var failed=mapper.find(id);assertEquals("SUBMISSION_FAILED",failed.getState());assertEquals("测试永久投递错误",failed.getDispatchError());assertEquals(1,failed.getDispatchAttempts());
+        var retry=new JsonObject();retry.addProperty("action","RETRY");service.control(id,retry);assertEquals("PENDING_SUBMISSION",mapper.find(id).getState());
+    }
     @Test void resolverInheritsCompatibleOverrides(){
         var state=JsonParser.parseString("""
         {"models":[{"id":"g","capabilities":["TEXT_REASONING"]},{"id":"p","capabilities":["TEXT_REASONING"]},{"id":"image","capabilities":["IMAGE_GENERATION"]}],"globalBindings":{"$default":"g"},"agentBindings":{"WRITER":{"$default":"g"}}}
@@ -64,5 +71,12 @@ class AgentRunServiceTest {
         assertEquals("p",AgentRunService.resolveModel(state,project,"WRITER","N22").get("id").getAsString());
         project.getAsJsonObject("nodeBindings").getAsJsonObject("N22").addProperty("TEXT_REASONING","g");
         assertEquals("g",AgentRunService.resolveModel(state,project,"WRITER","N22").get("id").getAsString());
+    }
+    @Test void visualRequirementChangeRejectsPreviouslyGeneratedAgentCandidate(){
+        var need=JsonParser.parseString("{\"id\":\"visual-input\",\"title\":\"人物参考\",\"description\":\"第一版要求\",\"consumerNodeIds\":[\"N08\"]}").getAsJsonObject();need.addProperty("projectId",projectId);
+        workspace.execute(new WorkspaceCommand("CREATE_VISUAL_NEED",need,workspace.load().get("version").getAsLong()));
+        var request=request("N08");String id=request.get("id").getAsString();service.create(request);service.dispatch();waiting(id);
+        need.remove("id");need.addProperty("needId","visual-input");need.addProperty("description","改为另一种人物风格");workspace.execute(new WorkspaceCommand("UPDATE_VISUAL_NEED",need,workspace.load().get("version").getAsLong()));
+        assertEquals(409,assertThrows(BusinessException.class,()->service.decide(id,decision())).getStatus());
     }
 }
