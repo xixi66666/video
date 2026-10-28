@@ -35,32 +35,41 @@ public class AgentRunService {
         String id=text(request,"id",100),projectId=text(request,"projectId",90),nodeId=text(request,"nodeId",5),mode=text(request,"mode",10);
         if(!id.matches("run_[a-zA-Z0-9_-]{8,90}"))throw bad("运行 ID 无效");
         if(!Set.of("FIXTURE","LIVE").contains(mode))throw bad("运行模式无效");
+        var consultationRoles=consultationRoles(request);
         var existing=mapper.find(id);
-        if(existing!=null){var saved=JsonParser.parseString(existing.getPayload()).getAsJsonObject();if(!existing.getProjectId().equals(projectId)||!existing.getNodeId().equals(nodeId)||!saved.get("mode").getAsString().equals(mode))throw new BusinessException(409,"运行 ID 已用于不同请求");return summary(existing);}
+        if(existing!=null){var saved=JsonParser.parseString(existing.getPayload()).getAsJsonObject();var previous=saved.has("consultationRoles")?saved.getAsJsonArray("consultationRoles"):new JsonArray();if(!existing.getProjectId().equals(projectId)||!existing.getNodeId().equals(nodeId)||!saved.get("mode").getAsString().equals(mode)||!previous.equals(consultationRoles))throw new BusinessException(409,"运行 ID 已用于不同请求");return summary(existing);}
         if(mode.equals("LIVE")){
             var ready=readiness();if(!ready.get("online").getAsBoolean()||!ready.get("liveModelsEnabled").getAsBoolean())throw new BusinessException(409,"真实模型调用已关闭，本轮只允许测试模型验收。");
         }
         var state=workspace.load();var project=find(state.getAsJsonArray("projects"),projectId);var node=find(workspace.catalog().getAsJsonArray("nodes"),nodeId);
         if(project==null||node==null)throw bad("作品或节点不存在");
+        for(var item:consultationRoles){String role=item.getAsString();if(role.equals(node.get("agentRole").getAsString())||find(workspace.catalog().getAsJsonArray("agents"),role)==null)throw bad("会诊角色无效或与主责角色重复");}
         workspace.requireExecutable(project,nodeId);
         var input=input(state,project,node);
         if(input.toString().getBytes(StandardCharsets.UTF_8).length>MAX_INPUT_BYTES)throw new BusinessException(413,"节点输入过大，请缩减依赖产物或材料后再运行。");
         var payload=new JsonObject();payload.addProperty("id",id);payload.addProperty("projectId",projectId);payload.addProperty("mode",mode);
+        payload.add("consultationRoles",consultationRoles);
+        if(consultationRoles.size()>=2)payload.addProperty("consultationComparison",true);
         payload.add("node",node);payload.add("input",input);payload.addProperty("inputFingerprint",sha(input));
         payload.addProperty("executionMode",planOnly(node)?"PLAN_ONLY":"GENERATE_TEXT");
         var models=new JsonObject();models.add("worker",resolveModel(state,project,node.get("agentRole").getAsString(),nodeId));
-        models.add("supervisor",resolveModel(state,project,"PRODUCER",null));models.add("reviewer",resolveModel(state,project,"QUALITY",null));payload.add("models",models);
+        models.add("supervisor",resolveModel(state,project,"PRODUCER",null));models.add("reviewer",resolveModel(state,project,"QUALITY",null));
+        // 每位会诊专家按其角色继承绑定，固定独立快照；节点专属覆盖仅用于主责节点。
+        for(var item:consultationRoles){String consultant=item.getAsString();models.add("consultant_"+consultant,resolveModel(state,project,consultant,null));}
+        payload.add("models",models);
         if(mode.equals("LIVE")){
             // 白名单是操作者对供应商工具能力、数据边界与费用的明确授权，不冒充系统验证。
             var authorized=new HashSet<>(Arrays.asList(System.getenv().getOrDefault("CREATOR_APPROVED_AGENT_MODELS","").split(",")));
             for(var entry:models.entrySet()){
                 var model=entry.getValue().getAsJsonObject();
-                if(!model.has("id")||!authorized.contains(model.get("id").getAsString()))throw new BusinessException(409,"主管、专家和评审模型都必须配置，并由服务器白名单明确授权。");
+                if(!model.has("id")||!authorized.contains(model.get("id").getAsString()))throw new BusinessException(409,"主管、主责专家、会诊专家和评审模型都必须配置，并由服务器白名单明确授权。");
                 if(!Set.of("CHAT_COMPLETIONS_COMPATIBLE","RESPONSES").contains(model.get("protocol").getAsString()))throw new BusinessException(409,"所选协议尚无 Agent 调用适配器。");
-                ModelParameterPolicy.validateLiveAgent(model.get("parameters"));
+                ModelParameterPolicy.validateLiveAgent(model.get("parameters"),model.get("protocol").getAsString());
             }
         }
-        payload.add("limits",JsonParser.parseString("{\"maxModelCalls\":30,\"maxTotalTokens\":20000,\"maxOutputTokens\":1200,\"maxSeconds\":180,\"maxReworks\":1}"));
+        var limits=JsonParser.parseString("{\"maxModelCalls\":30,\"maxSeconds\":180,\"maxReworks\":1}").getAsJsonObject();
+        if(!consultationRoles.isEmpty())limits.addProperty("maxModelCalls",60);
+        payload.add("limits",limits);
         var record=new AgentRunRecord();record.setId(id);record.setProjectId(projectId);record.setNodeId(nodeId);record.setPayload(payload.toString());record.setInputFingerprint(sha(input));record.setState("PENDING_SUBMISSION");record.setCreatedAt(Instant.now().toString());record.setDispatchAttempts(0);mapper.insert(record);
         return summary(record);
     }
@@ -149,7 +158,15 @@ public class AgentRunService {
         return summary(require(id));
     }
 
-    private JsonObject summary(AgentRunRecord r){var result=gson.toJsonTree(r).getAsJsonObject();result.remove("payload");var p=JsonParser.parseString(r.getPayload()).getAsJsonObject();result.add("mode",p.get("mode"));result.add("executionMode",p.get("executionMode"));result.add("models",p.get("models"));result.add("limits",p.get("limits"));return result;}
+    private JsonObject summary(AgentRunRecord r){var result=gson.toJsonTree(r).getAsJsonObject();result.remove("payload");var p=JsonParser.parseString(r.getPayload()).getAsJsonObject();result.add("mode",p.get("mode"));result.add("executionMode",p.get("executionMode"));result.add("models",p.get("models"));result.add("limits",p.get("limits"));result.add("consultationRoles",p.has("consultationRoles")?p.get("consultationRoles"):new JsonArray());return result;}
+    private static JsonArray consultationRoles(JsonObject request){
+        var result=new JsonArray();if(!request.has("consultationRoles"))return result;
+        var value=request.get("consultationRoles");if(!value.isJsonArray()||value.getAsJsonArray().size()>6)throw bad("会诊角色须为最多六个角色的数组");
+        var seen=new HashSet<String>();for(var item:value.getAsJsonArray()){
+            if(!item.isJsonPrimitive()||!item.getAsJsonPrimitive().isString())throw bad("会诊角色必须是角色标识");
+            String role=item.getAsString();if(role.isBlank()||!seen.add(role))throw bad("会诊角色不能为空或重复");result.add(role);
+        }return result;
+    }
     private AgentRunRecord require(String id){if(!id.matches("run_[a-zA-Z0-9_-]{8,90}"))throw bad("运行 ID 无效");var r=mapper.find(id);if(r==null)throw new BusinessException(404,"运行不存在");return r;}
     private static JsonObject input(JsonObject state,JsonObject project,JsonObject node){
         var result=new JsonObject();for(String k:List.of("id","title","brief","template","platforms"))result.add(k,project.get(k));result.add("creatorProfile",state.get("profile"));

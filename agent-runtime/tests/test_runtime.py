@@ -60,6 +60,53 @@ def test_auth_and_live_disabled(tmp_path, monkeypatch):
         assert c.post("/runs", json=body).status_code == 400
 
 
+def test_reviewer_toolset_converges_after_reading_required_materials(tmp_path, monkeypatch):
+    from app.models import FixtureModel
+    from langchain_core.messages import AIMessage, ToolMessage
+    from langchain_core.outputs import ChatGeneration, ChatResult
+
+    original = FixtureModel._generate
+    inspected = []
+
+    def try_repeat(self, messages, stop=None, run_manager=None, **kwargs):
+        read_count = sum(isinstance(m, ToolMessage) and m.name == "read_file" for m in messages)
+        if self.role == "REVIEWER" and read_count >= 2:
+            inspected.append(list(self.names))
+            # 模拟会继续读取的模型：只有 read_file 从可用工具移除后才会提交评审。
+            if "read_file" in self.names:
+                msg = AIMessage(content="", tool_calls=[{"name": "read_file", "args": {"file_path": "/knowledge/REVIEWER.md"}, "id": "repeat"}])
+                return ChatResult(generations=[ChatGeneration(message=msg)])
+        return original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    monkeypatch.setattr(FixtureModel, "_generate", try_repeat)
+    body = request("run_reviewer_converge")
+    body["fixtureRework"] = False
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as c:
+        assert c.post("/runs", json=body).status_code == 202
+        run = wait(c, body["id"], {"WAITING_ACCEPTANCE", "FAILED", "UNKNOWN"})
+        assert run["status"] == "WAITING_ACCEPTANCE", run
+        assert inspected and all("read_file" not in names and "submit_review" in names for names in inspected)
+        reads = [e["data"] for e in c.get(f"/runs/{body['id']}/events").json()
+                 if e["role"] == "REVIEWER" and e["kind"] == "TOOL_FINISHED" and e["data"]["tool"] == "read_file"]
+        assert [(e["fileTarget"], e["success"]) for e in reads] == [("ROLE_SKILL", True), ("ROLE_KNOWLEDGE", True)]
+
+
+def test_failed_file_read_does_not_satisfy_required_read():
+    from types import SimpleNamespace
+    from langchain_core.messages import ToolMessage
+    from app.engine import Guard
+    from app.profiles import load_profiles, skill_path
+
+    profile = load_profiles()["REVIEWER"]
+    execution = SimpleNamespace(payload={"profiles": {"REVIEWER": profile}}, reads=set(),
+                                emit=lambda *args, **kwargs: None, check=lambda: None)
+    guard = Guard(execution, "REVIEWER")
+    path = skill_path(profile)
+    req = SimpleNamespace(tool_call={"name": "read_file", "args": {"file_path": path}})
+    guard.wrap_tool_call(req, lambda request: ToolMessage(content="unavailable", tool_call_id="1", status="error"))
+    assert ("REVIEWER", path) not in execution.reads
+
+
 def test_live_requires_explicit_model_allowlist_without_network(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_ENABLE_LIVE_MODELS", "true")
     monkeypatch.delenv("CREATOR_APPROVED_AGENT_MODELS", raising=False)
@@ -86,6 +133,19 @@ def test_checkpoint_survives_restart_and_usage_limit(tmp_path):
         assert len([e for e in events if e["kind"] == "MODEL_STARTED"]) == 3
 
 
+def test_legacy_token_limits_do_not_stop_execution_and_usage_is_recorded(tmp_path):
+    """旧快照中的 token 字段不再限流，但 usage 事件仍可审计。"""
+    body = request("run_without_token_limit")
+    body["limits"].update(maxTotalTokens=1, maxOutputTokens=1)
+    body["fixtureRework"] = False
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as client:
+        assert client.post("/runs", json=body).status_code == 202
+        run = wait(client, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "WAITING_ACCEPTANCE", run
+        events = client.get(f"/runs/{body['id']}/events").json()
+        assert sum(e["data"].get("tokens", 0) for e in events if e["kind"] == "MODEL_FINISHED") > 1
+
+
 NODES = json.loads((ROOT / "specs/nodes.json").read_text(encoding="utf-8"))["nodes"]
 
 
@@ -101,3 +161,33 @@ def test_all_node_contracts_and_independent_role_packages(tmp_path, node):
         candidate = next(a["content"] for a in run["artifacts"] if a["kind"] == "CANDIDATE")
         assert set(node["output"]["requiredFields"]) <= candidate["fields"].keys()
         assert candidate["fixture"] is True
+
+
+def test_analyst_can_call_registered_statistics_tool(tmp_path, monkeypatch):
+    """验证真实委派链路注册并执行离线计算，而不是仅测试独立函数。"""
+    from langchain_core.messages import AIMessage, ToolMessage
+    from langchain_core.outputs import ChatGeneration, ChatResult
+    from app.models import FixtureModel
+
+    original = FixtureModel._generate
+
+    def generate(self, messages, stop=None, run_manager=None, **kwargs):
+        used = [m.name for m in messages if isinstance(m, ToolMessage)]
+        if self.role == "ANALYST" and "read_inputs" in used and "calculate_proportion_interval" not in used:
+            message = AIMessage(content="", tool_calls=[{"name": "calculate_proportion_interval",
+                "args": {"successes": 50, "trials": 100}, "id": "fixture-statistics"}])
+            message.usage_metadata = {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
+            return ChatResult(generations=[ChatGeneration(message=message)])
+        return original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    monkeypatch.setattr(FixtureModel, "_generate", generate)
+    body = request("run_statistics_tool")
+    body["node"] = next(node for node in NODES if node["agentRole"] == "ANALYST")
+    body["fixtureRework"] = False
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as c:
+        assert c.post("/runs", json=body).status_code == 202
+        run = wait(c, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "WAITING_ACCEPTANCE", run
+        events = c.get(f"/runs/{body['id']}/events").json()
+        assert any(e["role"] == "ANALYST" and e["kind"] == "TOOL_FINISHED"
+                   and e["data"]["tool"] == "calculate_proportion_interval" for e in events)

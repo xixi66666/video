@@ -25,6 +25,26 @@ class AgentRunServiceTest {
         workspace.execute(new WorkspaceCommand("CREATE_PROJECT",payload,workspace.load().get("version").getAsLong()));
     }
     JsonObject request(String node){var p=new JsonObject();p.addProperty("id","run_"+UUID.randomUUID());p.addProperty("projectId",projectId);p.addProperty("nodeId",node);p.addProperty("mode","FIXTURE");return p;}
+    @Test void consultationRolesAreValidatedAndPersisted(){
+        var req=request("N08");req.add("consultationRoles",JsonParser.parseString("[\"FACT_CHECK\",\"WRITER\"]"));
+        var created=service.create(req);assertEquals(2,created.getAsJsonArray("consultationRoles").size());
+        var saved=JsonParser.parseString(mapper.find(req.get("id").getAsString()).getPayload()).getAsJsonObject();
+        assertEquals(req.get("consultationRoles"),saved.get("consultationRoles"));
+        assertTrue(saved.getAsJsonObject("models").has("consultant_FACT_CHECK"));
+        assertTrue(saved.getAsJsonObject("models").has("consultant_WRITER"));
+        assertTrue(saved.get("consultationComparison").getAsBoolean());
+        assertDoesNotThrow(()->service.create(req));
+        req.add("consultationRoles",JsonParser.parseString("[\"WRITER\"]"));
+        assertThrows(BusinessException.class,()->service.create(req));
+        var six=request("N08");six.add("consultationRoles",JsonParser.parseString("[\"FACT_CHECK\",\"WRITER\",\"QUALITY\",\"AUDIO\",\"IMAGE\",\"VIDEO\"]"));
+        var sixRun=service.create(six);assertEquals(6,sixRun.getAsJsonArray("consultationRoles").size());
+        var sixPayload=JsonParser.parseString(mapper.find(six.get("id").getAsString()).getPayload()).getAsJsonObject();
+        assertTrue(sixPayload.getAsJsonObject("models").has("consultant_VIDEO"));
+        for(String roles:java.util.List.of("[\"FACT_CHECK\",\"FACT_CHECK\"]","[\"SUPERVISOR\"]","[\"TOPIC_RESEARCH\"]","[\"FACT_CHECK\",\"WRITER\",\"QUALITY\",\"AUDIO\",\"IMAGE\",\"VIDEO\",\"DIRECTOR\"]")){
+            var invalid=request("N08");invalid.add("consultationRoles",JsonParser.parseString(roles));
+            assertThrows(BusinessException.class,()->service.create(invalid));
+        }
+    }
     JsonObject decision(){var p=new JsonObject();p.addProperty("decision","ACCEPT");return p;}
     void waiting(String id){
         doReturn(JsonParser.parseString("""
@@ -136,6 +156,15 @@ class AgentRunServiceTest {
         assertEquals("p",AgentRunService.resolveModel(state,project,"WRITER","N22").get("id").getAsString());
         project.getAsJsonObject("nodeBindings").getAsJsonObject("N22").addProperty("TEXT_REASONING","g");
         assertEquals("g",AgentRunService.resolveModel(state,project,"WRITER","N22").get("id").getAsString());
+    }
+    @Test void consultantResolvesItsOwnRoleBinding(){
+        var state=JsonParser.parseString("""
+        {"models":[{"id":"global","capabilities":["TEXT_REASONING"]},{"id":"fact","capabilities":["TEXT_REASONING"]},{"id":"writer","capabilities":["TEXT_REASONING"]}],"globalBindings":{"$default":"global"},"agentBindings":{"FACT_CHECK":{"$default":"fact"},"WRITER":{"$default":"writer"}}}
+        """).getAsJsonObject();
+        var project=JsonParser.parseString("{\"bindings\":{},\"nodeBindings\":{}}").getAsJsonObject();
+        assertEquals("fact",AgentRunService.resolveModel(state,project,"FACT_CHECK",null).get("id").getAsString());
+        assertEquals("writer",AgentRunService.resolveModel(state,project,"WRITER",null).get("id").getAsString());
+        assertEquals("global",AgentRunService.resolveModel(state,project,"ANALYST",null).get("id").getAsString());
     }
     @Test void unrelatedProductionNeedDoesNotInvalidateTextCandidate(){
         var need=JsonParser.parseString("{\"id\":\"visual-input\",\"title\":\"人物参考\",\"description\":\"第一版要求\",\"productionNodeId\":\"N27\"}").getAsJsonObject();need.addProperty("projectId",projectId);

@@ -28,12 +28,15 @@ final class ModelParameterPolicy {
         if(parameters==null||!parameters.isJsonObject())throw new BusinessException(400,"参数必须为 JSON 对象");
         if(containsCredential(parameters))throw new BusinessException(400,"生成参数不能包含密钥或认证信息");
     }
-    /** 实时 Agent 适配器目前只传递这两个参数；在业务受理前拒绝，避免进入 outbox 后才失败。 */
-    static void validateLiveAgent(JsonElement parameters) {
+    /** 在业务受理前拒绝适配器不支持的参数，避免进入 outbox 后才失败。 */
+    static void validateLiveAgent(JsonElement parameters, String protocol) {
         validate(parameters);
         var unsupported=new ArrayList<String>();
-        for(var key:parameters.getAsJsonObject().keySet())if(!Set.of("temperature","top_p").contains(key))unsupported.add(key);
-        if(!unsupported.isEmpty())throw new BusinessException(409,"实时 Agent 目前只支持 temperature/top_p 参数；请调整模型配置后再运行："+String.join("、",unsupported));
+        for(var key:parameters.getAsJsonObject().keySet())if(!Set.of("temperature","top_p","reasoning_effort").contains(key))unsupported.add(key);
+        if(!unsupported.isEmpty())throw new BusinessException(409,"实时 Agent 目前只支持 temperature/top_p/reasoning_effort 参数；请调整模型配置后再运行："+String.join("、",unsupported));
+        var effort=parameters.getAsJsonObject().get("reasoning_effort");
+        if(effort!=null && (!"CHAT_COMPLETIONS_COMPATIBLE".equals(protocol) || !effort.isJsonPrimitive() || !effort.getAsJsonPrimitive().isString() || !"none".equals(effort.getAsString())))
+            throw new BusinessException(409,"reasoning_effort 当前仅支持 Chat Completions 协议的 none");
     }
     private static boolean containsCredential(JsonElement element) {
         if (element.isJsonObject()) {
