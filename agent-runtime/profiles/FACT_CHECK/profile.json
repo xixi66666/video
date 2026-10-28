@@ -1,7 +1,7 @@
 {
   "id": "FACT_CHECK",
   "name": "资料与实测核验",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "整理来源和测试证据，列出未核实问题",

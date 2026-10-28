@@ -1,7 +1,7 @@
 {
   "id": "EDITOR",
   "name": "剪辑与后期",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "粗剪、字幕、时间线、混音、导出",

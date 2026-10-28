@@ -1,7 +1,7 @@
 {
   "id": "PACKAGING",
   "name": "平台包装",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "标题、封面、配文和平台版本",

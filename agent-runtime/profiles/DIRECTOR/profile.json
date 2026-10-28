@@ -1,7 +1,7 @@
 {
   "id": "DIRECTOR",
   "name": "导演与分镜",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "镜头拆解、声画安排、动态预演与难点样片",

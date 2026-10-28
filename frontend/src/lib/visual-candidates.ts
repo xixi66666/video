@@ -2,13 +2,13 @@ import type {Catalog,Project,WorkspaceState,Command} from './domain.ts'
 import {assertNoCredentials} from './model-parameters.ts'
 
 export type MediaKind='IMAGE'|'VIDEO'
-export interface VisualNeed {id:string;title:string;description:string;sourceNodeId?:string;consumerNodeIds:string[];desiredStartMs?:number;desiredEndMs?:number;revision:number;createdAt:string;legacySelectedCandidateId?:string}
-export interface VisualBatch {id:string;needId:string;mediaKind:MediaKind;prompt:string;modelSnapshot:Record<string,string>;parameters:Record<string,unknown>;budgetCents:number;sourceBatchId?:string;createdAt:string}
+export interface VisualNeed {id:string;title:string;description:string;productionNodeId?:'N27'|'N29';shotId?:string;legacyBinding?:Record<string,unknown>;desiredStartMs?:number;desiredEndMs?:number;revision:number;createdAt:string;legacySelectedCandidateId?:string}
+export interface VisualBatch {id:string;needId:string;mediaKind:MediaKind;prompt:string;modelSnapshot:Record<string,string>;parameters:Record<string,unknown>;budgetCents:number;sourceBatchId?:string;references?:{candidateId:string;fileRef:string;sha256:string;role:string}[];createdAt:string}
 export interface VisualCandidate {id:string;needId:string;batchId:string;assetId:string;fileRef:string;sha256:string;mediaKind:MediaKind;durationMs?:number;seed:string;costCents:number;note:string;status:'PENDING'|'KEPT'|'REJECTED';createdAt:string}
 export interface VisualPlacement {id:string;needId:string;candidateId:string;purpose:'TIMELINE'|'REFERENCE';referenceRole?:string;trackId?:string;targetStartMs?:number;targetEndMs?:number;sourceInMs?:number;sourceOutMs?:number;sourceDurationMs?:number;reason:string;active:boolean;createdAt:string;replacesId?:string;supersededBy?:string;removedAt?:string;removeReason?:string}
-export interface VisualWorkbench {schemaVersion:2;revision:number;needs:VisualNeed[];batches:VisualBatch[];candidates:VisualCandidate[];placements:VisualPlacement[];legacyAdoptions:Record<string,any>[]}
-export const emptyVisualWorkbench=():VisualWorkbench=>({schemaVersion:2,revision:0,needs:[],batches:[],candidates:[],placements:[],legacyAdoptions:[]})
-export const visualCommands=new Set(['CREATE_VISUAL_NEED','UPDATE_VISUAL_NEED','REMOVE_EMPTY_VISUAL_NEED','CREATE_VISUAL_BATCH','IMPORT_VISUAL_CANDIDATE','SET_VISUAL_CANDIDATE_STATUS','ADOPT_VISUAL_CANDIDATE','REMOVE_VISUAL_PLACEMENT'])
+export interface VisualWorkbench {schemaVersion:3;revision:number;needs:VisualNeed[];batches:VisualBatch[];candidates:VisualCandidate[];placements:VisualPlacement[];uses:{nodeId:string;placementIds:string[]}[];legacyAdoptions:Record<string,any>[]}
+export const emptyVisualWorkbench=():VisualWorkbench=>({schemaVersion:3,revision:0,needs:[],batches:[],candidates:[],placements:[],uses:[],legacyAdoptions:[]})
+export const visualCommands=new Set(['CREATE_VISUAL_NEED','UPDATE_VISUAL_NEED','REMOVE_EMPTY_VISUAL_NEED','CREATE_VISUAL_BATCH','IMPORT_VISUAL_CANDIDATE','SET_VISUAL_CANDIDATE_STATUS','ADOPT_VISUAL_CANDIDATE','REMOVE_VISUAL_PLACEMENT','USE_VISUAL_PLAN'])
 export const imageTypes=new Set(['image/png','image/jpeg','image/webp'])
 export function mediaKind(type:string):MediaKind|undefined{return imageTypes.has(type)?'IMAGE':['video/mp4','video/webm'].includes(type)?'VIDEO':undefined}
 const clone=<T>(value:T):T=>JSON.parse(JSON.stringify(value))
@@ -18,47 +18,62 @@ const id=(value:unknown)=>{const s=text(value,'编号',100,true);if(!/^[A-Za-z0-
 function range(start:unknown,end:unknown,label:string){const a=integer(start,label+'起点'),b=integer(end,label+'终点');if(b<=a)throw new Error(label+'终点必须晚于起点');return [a,b] as const}
 function find<T extends {id:string}>(items:T[],value:unknown,label:string){const item=items.find(x=>x.id===value);if(!item)throw new Error(label+'不存在');return item}
 function insert<T extends {id:string}>(items:T[],item:T,limit:number){if(items.some(x=>x.id===item.id))throw new Error('编号已存在');if(items.length>=limit)throw new Error('当前记录数量已达上限');items.push(item)}
-function consumers(value:unknown,catalog:Catalog):string[]{if(value===undefined)return [];if(!Array.isArray(value)||value.some(x=>typeof x!=='string'||!catalog.nodes.some(n=>n.id===x)))throw new Error('使用节点无效');return [...new Set(value)]}
-
-/** 旧镜头数据只做无损归档迁移，不猜测它在成片中的位置。 */
+export const productionNodes=['N27','N29'] as const
+export function productionOwner(value:unknown):'N27'|'N29'{if(value!=='N27'&&value!=='N29')throw new Error('画面需求只能归属主体内容 N27 或辅助画面 N29');return value}
+/** 历史绑定仅归档；不猜测其他业务节点对应哪种视频制作任务。 */
 export function migrateVisualWorkbench(project:Project):boolean {
- if(project.visualWorkbench||!project.videoWorkbench)return false
- const old=project.videoWorkbench,w=emptyVisualWorkbench()
- w.needs=(old.shots??[]).map((s:any)=>({id:s.id,title:s.title,description:'',sourceNodeId:s.nodeId,consumerNodeIds:[],revision:s.selectionRevision??0,createdAt:s.createdAt,legacySelectedCandidateId:s.selectedCandidateId}))
- w.batches=(old.batches??[]).map((b:any)=>({...clone(b),needId:b.shotId,mediaKind:'VIDEO'}))
- w.candidates=(old.candidates??[]).map((c:any)=>({...clone(c),needId:c.shotId,mediaKind:'VIDEO'}))
- w.legacyAdoptions=clone(old.adoptions??[]);project.visualWorkbench=w;return true
+ let changed=false
+ if(!project.visualWorkbench&&project.videoWorkbench){
+  const old=project.videoWorkbench,w=emptyVisualWorkbench()
+  w.needs=(old.shots??[]).map((x:any)=>({id:x.id,title:x.title,description:'',...(productionNodes.includes(x.nodeId)?{productionNodeId:x.nodeId}:{}),legacyBinding:{sourceNodeId:x.nodeId,consumerNodeIds:[]},revision:x.selectionRevision??0,createdAt:x.createdAt,legacySelectedCandidateId:x.selectedCandidateId}))
+  w.batches=(old.batches??[]).map((x:any)=>({...clone(x),needId:x.shotId,mediaKind:'VIDEO'}))
+  w.candidates=(old.candidates??[]).map((x:any)=>({...clone(x),needId:x.shotId,mediaKind:'VIDEO'}))
+  w.legacyAdoptions=clone(old.adoptions??[]);project.visualWorkbench=w;changed=true
+ }
+ const w=project.visualWorkbench
+ if(w&&(w as any).schemaVersion!==3){
+  for(const n of w.needs){const old=n as any;n.legacyBinding={sourceNodeId:old.sourceNodeId??'',consumerNodeIds:clone(old.consumerNodeIds??[])};if(productionNodes.includes(old.sourceNodeId))n.productionNodeId=old.sourceNodeId;delete old.sourceNodeId;delete old.consumerNodeIds}
+  w.schemaVersion=3;w.uses=[];changed=true
+ }
+ return changed
 }
-
 /** 仅返回需复查的实际使用节点；不改写节点产物，不自动完成节点。 */
 export function applyVisualCommand(state:WorkspaceState,project:Project,command:Command,catalog:Catalog):string[]{
  migrateVisualWorkbench(project)
  const w=project.visualWorkbench??=emptyVisualWorkbench(),p=command.payload,at=new Date().toISOString()
- const changed=(need:VisualNeed)=>{need.revision++;w.revision++;return need.consumerNodeIds}
+ const changed=(need:VisualNeed)=>{need.revision++;w.revision++;return [...new Set([...(need.productionNodeId?[need.productionNodeId]:[]),...w.uses.filter(u=>u.placementIds.some(id=>w.placements.some(x=>x.id===id&&x.needId===need.id))).map(u=>u.nodeId)])]}
+ if(command.type==='USE_VISUAL_PLAN'){
+  const nodeId=String(p.nodeId);if(!['N31','N32'].includes(nodeId))throw new Error('采用方案只能交给粗剪或精剪')
+  if(!Array.isArray(p.placementIds)||!p.placementIds.length||p.placementIds.length>2000)throw new Error('请选择实际使用的成片画面')
+  const ids=[...new Set<string>(p.placementIds)];for(const id of ids){const x=find(w.placements,id,'采用记录');if(!x.active||x.purpose!=='TIMELINE')throw new Error('只能交接有效成片画面');productionOwner(find(w.needs,x.needId,'需求').productionNodeId)}
+  w.uses=w.uses.filter(u=>u.nodeId!==nodeId);w.uses.push({nodeId,placementIds:ids});return [nodeId]
+ }
  if(command.type==='CREATE_VISUAL_NEED'||command.type==='UPDATE_VISUAL_NEED'){
-  const sourceNodeId=text(p.sourceNodeId,'来源节点',5);if(sourceNodeId&&!catalog.nodes.some(n=>n.id===sourceNodeId))throw new Error('来源节点不存在')
-  const value={title:text(p.title,'画面需求名称',120,true),description:text(p.description,'画面描述',10000),consumerNodeIds:consumers(p.consumerNodeIds,catalog),...(sourceNodeId?{sourceNodeId}:{}),...(p.desiredStartMs!==undefined||p.desiredEndMs!==undefined?(()=>{const [desiredStartMs,desiredEndMs]=range(p.desiredStartMs,p.desiredEndMs,'目标范围');return {desiredStartMs,desiredEndMs}})():{})}
+  if(p.sourceNodeId!==undefined||p.consumerNodeIds!==undefined)throw new Error('请使用制作任务归属，不再接受任意节点绑定');const productionNodeId=productionOwner(p.productionNodeId),shotId=text(p.shotId,'分镜编号',100)
+  const value={title:text(p.title,'画面需求名称',120,true),description:text(p.description,'画面描述',10000),productionNodeId,...(shotId?{shotId}:{}),...(p.desiredStartMs!==undefined||p.desiredEndMs!==undefined?(()=>{const [desiredStartMs,desiredEndMs]=range(p.desiredStartMs,p.desiredEndMs,'目标范围');return {desiredStartMs,desiredEndMs}})():{})}
   if(command.type==='CREATE_VISUAL_NEED'){insert(w.needs,{...value,id:id(p.id),revision:0,createdAt:at},300);return []}
-  const need=find(w.needs,p.needId,'画面需求'),previous=[...need.consumerNodeIds]
+  const need=find(w.needs,p.needId,'画面需求');if(need.productionNodeId&&need.productionNodeId!==productionNodeId&&w.placements.some(x=>x.active&&x.needId===need.id))throw new Error('已有采用时不能更换归属，请先撤销采用')
   if(w.placements.some(x=>x.active&&x.needId===need.id&&x.purpose==='TIMELINE'&&value.desiredStartMs!==undefined&&(x.targetStartMs!<value.desiredStartMs||x.targetEndMs!>value.desiredEndMs!)))throw new Error('新目标范围不能排除已有采用，请先调整采用区间')
-  delete need.sourceNodeId;delete need.desiredStartMs;delete need.desiredEndMs;Object.assign(need,value)
+  delete need.shotId;delete need.desiredStartMs;delete need.desiredEndMs;Object.assign(need,value)
   const used=w.placements.some(x=>x.active&&x.needId===need.id),current=changed(need)
-  return used?[...new Set([...previous,...current])]:[]
+  return used?current:[]
  }
  if(command.type==='REMOVE_EMPTY_VISUAL_NEED'){
   const need=find(w.needs,p.needId,'画面需求');if(w.batches.some(b=>b.needId===need.id)||w.placements.some(x=>x.needId===need.id))throw new Error('已有批次或采用历史的需求不能删除');w.needs=w.needs.filter(n=>n.id!==need.id);return []
  }
  if(command.type==='CREATE_VISUAL_BATCH'){
-  const need=find(w.needs,p.needId,'画面需求'),kind=p.mediaKind as MediaKind;if(!['IMAGE','VIDEO'].includes(kind))throw new Error('候选类型无效')
+  const need=find(w.needs,p.needId,'画面需求');productionOwner(need.productionNodeId);const kind=p.mediaKind as MediaKind;if(!['IMAGE','VIDEO'].includes(kind))throw new Error('候选类型无效')
   const parameters=clone(p.parameters??{});assertNoCredentials(parameters);if(JSON.stringify(parameters).length>20000)throw new Error('参数过长')
   let modelSnapshot:Record<string,string>
   if(p.modelId){const m=find(state.models,p.modelId,'模型');if(!m.capabilities.includes(kind==='IMAGE'?'IMAGE_GENERATION':'VIDEO_GENERATION'))throw new Error('模型不支持此候选类型');modelSnapshot={id:m.id,name:m.name,provider:m.provider??'',remoteModelId:m.remoteModelId,protocol:m.protocol}}
   else modelSnapshot={name:text(p.externalModel,'外部模型名称与版本',200,true),provider:'MANUAL_IMPORT'}
   if(p.sourceBatchId&&find(w.batches,p.sourceBatchId,'来源批次').needId!==need.id)throw new Error('来源批次不属于当前需求')
-  insert(w.batches,{id:id(p.id),needId:need.id,mediaKind:kind,prompt:text(p.prompt,'提示词',10000,true),modelSnapshot,parameters,budgetCents:integer(p.budgetCents,'费用上限',100000000),...(p.sourceBatchId?{sourceBatchId:p.sourceBatchId}:{}),createdAt:at},600);return []
+  const references=(p.references??[]) as {candidateId:string;role:string}[];if(!Array.isArray(references)||references.length>8)throw new Error('参考图最多8张');const frozen=references.map(ref=>{const c=find(w.candidates,ref.candidateId,'参考候选');if(c.mediaKind!=='IMAGE'||c.status==='REJECTED')throw new Error('请选择未淘汰的图片参考');if(!['FIRST_FRAME','LAST_FRAME','CHARACTER','STYLE','GENERAL'].includes(ref.role))throw new Error('参考用途无效');return {candidateId:c.id,fileRef:c.fileRef,sha256:c.sha256,role:ref.role}})
+  insert(w.batches,{references:frozen,id:id(p.id),needId:need.id,mediaKind:kind,prompt:text(p.prompt,'提示词',10000,true),modelSnapshot,parameters,budgetCents:integer(p.budgetCents,'费用上限',100000000),...(p.sourceBatchId?{sourceBatchId:p.sourceBatchId}:{}),createdAt:at},600);return []
  }
  if(command.type==='IMPORT_VISUAL_CANDIDATE'){
   const batch=find(w.batches,p.batchId,'批次'),asset=find(state.assets,p.assetId,'素材'),kind=mediaKind(asset.type)
+  productionOwner(find(w.needs,batch.needId,'画面需求').productionNodeId)
   if(asset.projectId!==project.id||!kind||kind!==batch.mediaKind)throw new Error('请选择本作品且与批次类型一致的图片或视频')
   if(!asset.sha256||!/^[a-f0-9]{64}$/.test(asset.sha256))throw new Error('素材缺少校验值，请重新上传')
   if(w.candidates.some(c=>c.batchId===batch.id&&c.assetId===asset.id))throw new Error('素材已登记到此批次')
@@ -77,6 +92,7 @@ export function applyVisualCommand(state:WorkspaceState,project:Project,command:
   candidate.status=p.status;return []
  }
  if(command.type!=='ADOPT_VISUAL_CANDIDATE')throw new Error('不支持的画面操作')
+ productionOwner(need.productionNodeId)
  if(candidate.status==='REJECTED')throw new Error('请先恢复已淘汰候选')
  const purpose=p.purpose;if(!['TIMELINE','REFERENCE'].includes(purpose))throw new Error('请指定采用用途和片段范围')
  const value:Omit<VisualPlacement,'createdAt'|'active'>={id:id(p.id),needId:need.id,candidateId:candidate.id,purpose,reason:text(p.reason,'采用原因',2000,true)}
@@ -103,4 +119,4 @@ export function applyVisualCommand(state:WorkspaceState,project:Project,command:
  candidate.status='KEPT';return changed(need)
 }
 
-export function visualInputs(project:Project,nodeId:string){const w=project.visualWorkbench;if(!w)return undefined;const needs=w.needs.filter(n=>n.consumerNodeIds.includes(nodeId));if(!needs.length)return undefined;return {needs,placements:w.placements.filter(p=>p.active&&needs.some(n=>n.id===p.needId))}}
+export function visualInputs(project:Project,nodeId:string){const w=project.visualWorkbench;if(!w)return undefined;const use=w.uses.find(u=>u.nodeId===nodeId);const placements=w.placements.filter(p=>use?.placementIds.includes(p.id));const needs=w.needs.filter(n=>n.productionNodeId===nodeId||placements.some(p=>p.needId===n.id));if(!needs.length)return undefined;return {needs,placements:use?placements:w.placements.filter(p=>p.active&&needs.some(n=>n.id===p.needId))}}

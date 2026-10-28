@@ -1,7 +1,7 @@
 {
   "id": "ANALYST",
   "name": "数据复盘",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "比较数据，提出可验证的改进假设",

@@ -1,7 +1,7 @@
 {
   "id": "FEEDBACK",
   "name": "互动反馈",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "评论归类、回复草稿与问题沉淀",

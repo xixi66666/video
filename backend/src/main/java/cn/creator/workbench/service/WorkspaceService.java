@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
 
@@ -53,12 +54,25 @@ public class WorkspaceService {
     }
     public JsonObject catalog(){return catalog.deepCopy();}
     public void requireExecutable(JsonObject project,String nodeId){var reasons=blocking(project,definition(nodeId));if(!reasons.isEmpty())throw new BusinessException(409,reasons.getFirst());}
+
+    /** 仅供服务内部采纳专家候选：草稿与来源在同一次版本检查和数据库更新中写入。 */
+    @Transactional
+    public synchronized JsonObject saveAgentDraft(String projectId,String nodeId,String text,JsonObject provenance,long expectedVersion){
+        var state=load();long version=state.get("version").getAsLong();
+        if(expectedVersion!=version)throw new BusinessException(409,"工作区已在其他窗口更新，请刷新后重试。");
+        var p=new JsonObject();p.addProperty("projectId",projectId);p.addProperty("nodeId",nodeId);p.addProperty("text",text);p.addProperty("complete",false);
+        saveNode(state,p);
+        project(state,p).getAsJsonObject("nodes").getAsJsonObject(nodeId).add("agentDraftReview",provenance.deepCopy());
+        state.addProperty("version",version+1);
+        if(mapper.updateWorkspace("local",state.toString(),version)!=1)throw new BusinessException(409,"保存冲突，请刷新后重试。");
+        return state;
+    }
     @Transactional
     public synchronized JsonObject execute(WorkspaceCommand command){
         var state=load();long version=state.get("version").getAsLong();if(command.expectedVersion()!=version)throw new BusinessException(409,"工作区已在其他窗口更新，请刷新后重试。");
         var p=command.payload();
         switch(command.type()){
-            case "CREATE_VISUAL_NEED", "UPDATE_VISUAL_NEED", "REMOVE_EMPTY_VISUAL_NEED", "CREATE_VISUAL_BATCH", "IMPORT_VISUAL_CANDIDATE", "SET_VISUAL_CANDIDATE_STATUS", "ADOPT_VISUAL_CANDIDATE", "REMOVE_VISUAL_PLACEMENT" -> {
+            case "CREATE_VISUAL_NEED", "UPDATE_VISUAL_NEED", "REMOVE_EMPTY_VISUAL_NEED", "CREATE_VISUAL_BATCH", "IMPORT_VISUAL_CANDIDATE", "SET_VISUAL_CANDIDATE_STATUS", "ADOPT_VISUAL_CANDIDATE", "REMOVE_VISUAL_PLACEMENT", "USE_VISUAL_PLAN" -> {
                 var project=project(state,p);
                 for(String nodeId:visualCandidates.execute(state,project,command.type(),p,catalog)){
                     var node=project.getAsJsonObject("nodes").getAsJsonObject(nodeId);
@@ -111,8 +125,38 @@ public class WorkspaceService {
     }
     private void saveNode(JsonObject s,JsonObject p){
         var project=project(s,p);String key=required(p,"nodeId",5);var definition=definition(key);var node=project.getAsJsonObject("nodes").getAsJsonObject(key);String text=optional(p,"text",200000);boolean complete=bool(p,"complete");
-        if(complete){var reasons=blocking(project,definition);if(!reasons.isEmpty())throw new BusinessException(409,reasons.getFirst());if(text.isBlank())throw bad("请先填写或导入本节点产物");validateStructuredFields(definition,text);}
+        if(complete){var reasons=blocking(project,definition);if(!reasons.isEmpty())throw new BusinessException(409,reasons.getFirst());if(text.isBlank())throw bad("请先填写或导入本节点产物");validateStructuredFields(definition,text);
+            if(!alreadyReviewed(node,text))reviewAgentDraft(node,p,text);}
         node.addProperty("draft",text);if(complete&&node.get("status").getAsString().equals("COMPLETED")&&node.get("output").getAsString().equals(text))return;if(complete){node.addProperty("output",text);node.addProperty("status","COMPLETED");node.addProperty("revision",node.get("revision").getAsInt()+1);var dependencies=new JsonObject();for(var dependency:definition.getAsJsonArray("dependsOn")){String dep=dependency.getAsString();dependencies.addProperty(dep,project.getAsJsonObject("nodes").getAsJsonObject(dep).get("revision").getAsInt());}node.add("dependencies",dependencies);invalidate(project,key);}else if(node.get("status").getAsString().equals("NOT_STARTED"))node.addProperty("status","DRAFT");node.addProperty("updatedAt",now());
+    }
+    private static boolean alreadyReviewed(JsonObject node,String text){
+        if(!node.get("status").getAsString().equals("COMPLETED")||!node.get("output").getAsString().equals(text))return false;
+        if(!node.has("agentDraftReview")||!node.get("agentDraftReview").isJsonObject())return true;
+        var provenance=node.getAsJsonObject("agentDraftReview");
+        return isTrue(provenance,"reviewedByHuman")&&provenance.has("reviewedTextSha256")&&provenance.get("reviewedTextSha256").isJsonPrimitive()&&shaText(text).equals(provenance.get("reviewedTextSha256").getAsString());
+    }
+    /** 人工确认只记录用户对本次内容的复核，并不证明事实或文件已被机器验证。 */
+    private static void reviewAgentDraft(JsonObject node,JsonObject payload,String text){
+        if(!node.has("agentDraftReview")||!node.get("agentDraftReview").isJsonObject())return;
+        var provenance=node.getAsJsonObject("agentDraftReview");
+        var review=payload.has("agentReview")&&payload.get("agentReview").isJsonObject()?payload.getAsJsonObject("agentReview"):null;
+        if(review==null||!isTrue(review,"acknowledged")||!provenance.has("runId")||!review.has("runId")||!review.get("runId").isJsonPrimitive()||!review.get("runId").getAsString().equals(provenance.get("runId").getAsString()))
+            throw new BusinessException(409,"请先复核专家草稿及待核对事项，再确认当前内容。");
+        if(isTrue(provenance,"fixture")){
+            String original=provenance.has("fixtureBody")?provenance.get("fixtureBody").getAsString().trim():"";
+            if(!isTrue(review,"fixtureReplaced")||(!original.isEmpty()&&text.contains(original)))
+                throw new BusinessException(409,"测试产物不能作为完成结果，请替换为人工提供的真实内容后再确认。");
+        }
+        provenance.addProperty("reviewedAt",now());
+        provenance.addProperty("reviewedTextSha256",shaText(text));
+        provenance.addProperty("reviewedByHuman",true);
+    }
+    private static boolean isTrue(JsonObject obj,String key){
+        var value=obj.get(key);return value!=null&&value.isJsonPrimitive()&&value.getAsJsonPrimitive().isBoolean()&&value.getAsBoolean();
+    }
+    private static String shaText(String value){
+        try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}
+        catch(Exception e){throw new IllegalStateException(e);}
     }
     /** 结构化 JSON 产物检查必填字段；普通自由文本仍保留手工交付能力。 */
     private static void validateStructuredFields(JsonObject definition,String text){

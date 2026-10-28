@@ -1,7 +1,7 @@
 {
   "id": "CAPTURE",
   "name": "拍摄与录屏辅助",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "拍摄清单、演示环境、录屏与缺镜头检查",

@@ -2,7 +2,7 @@
 
 ## 1. 当前边界
 
-**只提供合同和操作流程，不安装、不连接、不实现适配器。** ComfyUI、OBS、Remotion、FFmpeg、剪辑软件、平台发布与指标连接器初始均为 DOCUMENTED。登记了 URL 不代表联通，更不代表已经完成生成。
+**已实现工作台到远程媒体 Worker 的 HTTP 客户端和持久生成任务，默认关闭；Worker 及 ComfyUI 等具体工具适配尚未部署实现。** 当前配置项指向本项目的 Worker 协议，不直接指向 ComfyUI。OBS、Remotion、FFmpeg、剪辑软件、平台发布与指标仍为 DOCUMENTED。登记 URL 不代表已经联通或完成生成。实际接口见 [视频制作与媒体 API](26-production-lottery-and-media-api.md)。
 
 工具生命周期：DOCUMENTED → CONFIGURED → VERIFIED → ENABLED；验证失败保留诊断，停用为 DISABLED。声明能力与实测能力分开。配置示例见 `examples/comfyui-registration.example.json`。
 

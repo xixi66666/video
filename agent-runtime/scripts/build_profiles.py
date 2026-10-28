@@ -31,6 +31,10 @@ def main():
     for agent in agents:
         role = agent["id"]
         directory = ROOT / "agent-runtime/profiles" / role
+        # 这是初始化脚本：现有专家包可能经过人工维护，禁止覆盖。
+        if any((directory / name).exists() for name in ("SKILL.md", "knowledge.md", "prompt.md", "profile.json")):
+            print(f"跳过已有专家包: {role}")
+            continue
         directory.mkdir(parents=True, exist_ok=True)
         sop, criteria = DETAILS[role]
         skill = f"""---

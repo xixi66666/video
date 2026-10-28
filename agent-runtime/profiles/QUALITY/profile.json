@@ -1,7 +1,7 @@
 {
   "id": "QUALITY",
   "name": "质量检查",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "技术检查、内容审看、定位问题；不代替关键人工判断",

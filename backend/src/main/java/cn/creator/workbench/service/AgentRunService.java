@@ -114,9 +114,16 @@ public class AgentRunService {
             workspace.requireExecutable(project,record.getNodeId());
             JsonObject candidate=null;for(var a:remote.getAsJsonArray("artifacts")){var item=a.getAsJsonObject();if(item.get("kind").getAsString().equals("CANDIDATE"))candidate=item.getAsJsonObject("content");}
             if(candidate==null)throw new BusinessException(409,"没有可采纳产物");
-            var p=new JsonObject();p.addProperty("projectId",record.getProjectId());p.addProperty("nodeId",record.getNodeId());
-            p.addProperty("text",candidate.get("body").getAsString()+"\n\n"+new GsonBuilder().setPrettyPrinting().create().toJson(candidate));p.addProperty("complete",false);
-            workspace.execute(new WorkspaceCommand("SAVE_NODE",p,state.get("version").getAsLong()));
+            String candidateBody=candidate.get("body").getAsString();
+            String draft=candidateBody+"\n\n"+new GsonBuilder().setPrettyPrinting().create().toJson(candidate);
+            var provenance=new JsonObject();provenance.addProperty("runId",record.getId());
+            boolean fixture="FIXTURE".equals(JsonParser.parseString(record.getPayload()).getAsJsonObject().get("mode").getAsString());
+            provenance.addProperty("fixture",fixture);
+            if(fixture)provenance.addProperty("fixtureBody",candidateBody);
+            if(candidate.has("version")&&candidate.get("version").isJsonPrimitive()&&candidate.getAsJsonPrimitive("version").isNumber())provenance.add("candidateVersion",candidate.get("version"));
+            if(candidate.has("sha256")&&candidate.get("sha256").isJsonPrimitive()&&candidate.getAsJsonPrimitive("sha256").isString())provenance.add("candidateHash",candidate.get("sha256"));
+            provenance.add("uncertainties",candidate.has("uncertainties")&&candidate.get("uncertainties").isJsonArray()?candidate.getAsJsonArray("uncertainties").deepCopy():new JsonArray());
+            workspace.saveAgentDraft(record.getProjectId(),record.getNodeId(),draft,provenance,state.get("version").getAsLong());
         }
         mapper.state(id,choice.equals("ACCEPT")?"ACCEPT_PENDING_SYNC":"REJECT_PENDING_SYNC");
         return summary(require(id));

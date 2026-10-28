@@ -31,6 +31,21 @@ class AgentRunServiceTest {
             {"status":"WAITING_ACCEPTANCE","artifacts":[{"kind":"CANDIDATE","content":{"body":"测试候选，不可发布","fields":{"idea":"测试"},"fixture":true}}]}
             """).getAsJsonObject()).when(runtime).get("/runs/"+id);
     }
+    JsonObject currentNode(){
+        for(var item:workspace.load().getAsJsonArray("projects")){
+            var project=item.getAsJsonObject();
+            if(project.get("id").getAsString().equals(projectId))return project.getAsJsonObject("nodes").getAsJsonObject("N08");
+        }
+        throw new AssertionError("测试作品不存在");
+    }
+    void save(String text,boolean complete,JsonObject review,long expectedVersion){
+        var payload=new JsonObject();payload.addProperty("projectId",projectId);payload.addProperty("nodeId","N08");payload.addProperty("text",text);payload.addProperty("complete",complete);
+        if(review!=null)payload.add("agentReview",review);
+        workspace.execute(new WorkspaceCommand("SAVE_NODE",payload,expectedVersion));
+    }
+    JsonObject review(String runId,boolean replaced){
+        var value=new JsonObject();value.addProperty("runId",runId);value.addProperty("acknowledged",true);value.addProperty("fixtureReplaced",replaced);return value;
+    }
     @Test void dependenciesLiveSwitchAndIdempotentOutbox(){
         assertEquals(409,assertThrows(BusinessException.class,()->service.create(request("N15"))).getStatus());
         var p=request("N08");var first=service.create(p);assertEquals(first,service.create(p));
@@ -45,6 +60,56 @@ class AgentRunServiceTest {
         assertEquals("DRAFT",node.get("status").getAsString());assertEquals("",node.get("output").getAsString());assertTrue(node.get("draft").getAsString().contains("测试候选"));
         service.decide(id,decision());assertEquals(version,workspace.load().get("version").getAsLong());
         service.dispatch();assertEquals("ADOPTED",mapper.find(id).getState());
+    }
+    @Test void fixtureDraftRequiresReplacementAndExplicitReviewWithoutLosingProvenance(){
+        var p=request("N08");String id=p.get("id").getAsString();service.create(p);service.dispatch();waiting(id);service.decide(id,decision());
+        var node=currentNode();String fixture=node.get("draft").getAsString();var source=node.getAsJsonObject("agentDraftReview");
+        assertEquals(id,source.get("runId").getAsString());assertTrue(source.get("fixture").getAsBoolean());assertTrue(source.getAsJsonArray("uncertainties").isEmpty());
+        long version=workspace.load().get("version").getAsLong();
+        assertEquals(409,assertThrows(BusinessException.class,()->save(fixture,true,null,version)).getStatus());
+        assertEquals(409,assertThrows(BusinessException.class,()->save(fixture,true,review(id,true),version)).getStatus());
+        assertEquals("DRAFT",currentNode().get("status").getAsString());
+        String manual="我实际记录的创作想法";
+        save(manual,false,null,version);
+        assertEquals(id,currentNode().getAsJsonObject("agentDraftReview").get("runId").getAsString());
+        long editedVersion=workspace.load().get("version").getAsLong();
+        assertEquals(409,assertThrows(BusinessException.class,()->save(manual,true,review(id,true),version)).getStatus());
+        assertEquals(409,assertThrows(BusinessException.class,()->save(manual,true,review("run_wrong",true),editedVersion)).getStatus());
+        assertEquals(409,assertThrows(BusinessException.class,()->save(manual,true,review(id,false),editedVersion)).getStatus());
+        save(manual,true,review(id,true),editedVersion);
+        var completed=currentNode();assertEquals("COMPLETED",completed.get("status").getAsString());assertEquals(manual,completed.get("output").getAsString());
+        assertTrue(completed.getAsJsonObject("agentDraftReview").get("reviewedByHuman").getAsBoolean());
+        assertEquals(64,completed.getAsJsonObject("agentDraftReview").get("reviewedTextSha256").getAsString().length());
+        long completedVersion=workspace.load().get("version").getAsLong();
+        assertDoesNotThrow(()->save(manual,true,null,completedVersion));
+    }
+    @Test void expertDraftNeedsReviewButOrdinaryClientCannotSetOrEraseProvenance(){
+        var p=new JsonObject();p.addProperty("projectId",projectId);p.addProperty("nodeId","N08");p.addProperty("text","手工内容");p.addProperty("complete",false);
+        p.add("agentDraftReview",JsonParser.parseString("{\"runId\":\"forged\",\"fixture\":false}").getAsJsonObject());
+        workspace.execute(new WorkspaceCommand("SAVE_NODE",p,workspace.load().get("version").getAsLong()));
+        assertFalse(currentNode().has("agentDraftReview"));
+        var source=JsonParser.parseString("{\"runId\":\"run_live_123\",\"fixture\":false,\"uncertainties\":[\"来源仍需复核\"]}").getAsJsonObject();
+        workspace.saveAgentDraft(projectId,"N08","专家候选",source,workspace.load().get("version").getAsLong());
+        p.addProperty("text","修改后的候选");p.add("agentDraftReview",new JsonObject());
+        workspace.execute(new WorkspaceCommand("SAVE_NODE",p,workspace.load().get("version").getAsLong()));
+        assertEquals("run_live_123",currentNode().getAsJsonObject("agentDraftReview").get("runId").getAsString());
+        long version=workspace.load().get("version").getAsLong();
+        assertEquals(409,assertThrows(BusinessException.class,()->save("修改后的候选",true,null,version)).getStatus());
+        assertDoesNotThrow(()->save("修改后的候选",true,review("run_live_123",false),version));
+    }
+    @Test void ordinaryManualDraftStillCompletesWithoutReview(){
+        assertDoesNotThrow(()->save("人工自由文本",true,null,workspace.load().get("version").getAsLong()));
+        assertEquals("COMPLETED",currentNode().get("status").getAsString());
+    }
+    @Test void newExpertDraftMatchingExistingOutputStillRequiresReview(){
+        String text="已有人工确认的内容";
+        save(text,true,null,workspace.load().get("version").getAsLong());
+        var source=JsonParser.parseString("{\"runId\":\"run_live_again\",\"fixture\":false,\"uncertainties\":[]}").getAsJsonObject();
+        workspace.saveAgentDraft(projectId,"N08",text,source,workspace.load().get("version").getAsLong());
+        long version=workspace.load().get("version").getAsLong();
+        assertEquals(409,assertThrows(BusinessException.class,()->save(text,true,null,version)).getStatus());
+        save(text,true,review("run_live_again",false),version);
+        assertTrue(currentNode().getAsJsonObject("agentDraftReview").get("reviewedByHuman").getAsBoolean());
     }
     @Test void changedInputRejectsLateCandidateAndDeletionIsReversible(){
         var p=request("N08");String id=p.get("id").getAsString();service.create(p);service.dispatch();waiting(id);
@@ -72,11 +137,11 @@ class AgentRunServiceTest {
         project.getAsJsonObject("nodeBindings").getAsJsonObject("N22").addProperty("TEXT_REASONING","g");
         assertEquals("g",AgentRunService.resolveModel(state,project,"WRITER","N22").get("id").getAsString());
     }
-    @Test void visualRequirementChangeRejectsPreviouslyGeneratedAgentCandidate(){
-        var need=JsonParser.parseString("{\"id\":\"visual-input\",\"title\":\"人物参考\",\"description\":\"第一版要求\",\"consumerNodeIds\":[\"N08\"]}").getAsJsonObject();need.addProperty("projectId",projectId);
+    @Test void unrelatedProductionNeedDoesNotInvalidateTextCandidate(){
+        var need=JsonParser.parseString("{\"id\":\"visual-input\",\"title\":\"人物参考\",\"description\":\"第一版要求\",\"productionNodeId\":\"N27\"}").getAsJsonObject();need.addProperty("projectId",projectId);
         workspace.execute(new WorkspaceCommand("CREATE_VISUAL_NEED",need,workspace.load().get("version").getAsLong()));
         var request=request("N08");String id=request.get("id").getAsString();service.create(request);service.dispatch();waiting(id);
         need.remove("id");need.addProperty("needId","visual-input");need.addProperty("description","改为另一种人物风格");workspace.execute(new WorkspaceCommand("UPDATE_VISUAL_NEED",need,workspace.load().get("version").getAsLong()));
-        assertEquals(409,assertThrows(BusinessException.class,()->service.decide(id,decision())).getStatus());
+        assertDoesNotThrow(()->service.decide(id,decision()));
     }
 }

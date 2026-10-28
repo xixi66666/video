@@ -24,7 +24,12 @@ public class MediaService {
         MessageDigest digest;try{digest=MessageDigest.getInstance("SHA-256");}catch(NoSuchAlgorithmException e){throw new IllegalStateException(e);}
         try(var input=new DigestInputStream(file.getInputStream(),digest)){Files.copy(input,target);}catch(Exception e){Files.deleteIfExists(target);throw e;}
         var record=new MediaRecord();record.setId(id);record.setOriginalName(original);record.setStorageName(id);record.setMediaType(Optional.ofNullable(file.getContentType()).filter(t->t.length()<120).orElse("application/octet-stream"));record.setByteSize(Files.size(target));record.setSha256(HexFormat.of().formatHex(digest.digest()));
-        try{mapper.insertFile(record);}catch(RuntimeException e){Files.deleteIfExists(target);throw e;}return record;
+        try{mapper.insertFile(record);}catch(RuntimeException e){Files.deleteIfExists(target);throw e;}
+        // 外层候选回收事务失败时同时清理本次新建文件，避免数据库回滚后留下无主原件。
+        if(org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive())org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization(){
+            @Override public void afterCompletion(int status){if(status==STATUS_ROLLED_BACK)try{Files.deleteIfExists(target);}catch(IOException ignored){/* 文件无法移除时保留，不能覆盖原始事务异常。 */}}
+        });
+        return record;
     }
     public MediaRecord find(String id){if(!id.matches("[a-zA-Z0-9_-]{1,64}"))throw new BusinessException(404,"素材不存在");var record=mapper.findFile(id);if(record==null)throw new BusinessException(404,"素材不存在");return record;}
     /** 正式采用前重新核对原件，避免缺失或被外部修改的文件进入采用清单。 */

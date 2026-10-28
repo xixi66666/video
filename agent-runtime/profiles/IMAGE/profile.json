@@ -1,7 +1,7 @@
 {
   "id": "IMAGE",
   "name": "图像制作",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "分镜图、插图、说明图和封面素材",

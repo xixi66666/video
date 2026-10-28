@@ -93,3 +93,7 @@ python scripts/render_node_catalog.py --check
 4. 生成成功不等于采用；技术检查、内容审阅、发布授权分别管理。
 5. ComfyUI 等工具在目标机器部署；本项目当前只定义接入方法。
 6. 未确认供应商、硬件、价格和账号权限时不假定可用。
+
+### 视频制作抽卡与远程执行接口
+
+画面抽卡只归属主体内容 N27 / 辅助画面 N29；粗剪与精剪记录实际使用的采用方案。已提供持久生成队列、远程媒体 Worker 客户端与[接口合同](specs/media-worker.openapi.json)，默认关闭真实执行；尚未部署 ComfyUI Worker。详见[实施说明](docs/26-production-lottery-and-media-api.md)。

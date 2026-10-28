@@ -3,7 +3,8 @@ import {validateModelParameters} from './model-parameters.ts'
 export type NodeStatus='NOT_STARTED'|'DRAFT'|'COMPLETED'|'SKIPPED'|'NEEDS_REVALIDATION'
 export interface TemplateOverride {mode?:string;skipReasonRequired?:boolean;responsibility?:string;recommendedCapabilities?:string[]}
 export interface NodeDefinition {id:string;name:string;stage:string;responsibility:string;scope:string;dependsOn:string[];agentRole:string;recommendedCapabilities:string[];inputDescription:string;output:{artifactType:string;requiredFields:string[]};humanAction:string;acceptanceCriteria:string;reworkAction:string;applicability:string;templateMode?:string}
-export interface NodeState {status:NodeStatus;draft:string;output:string;revision:number;dependencies:Record<string,number>;updatedAt?:string;skipReason?:string;visualInputRevision?:number}
+export interface AgentDraftReview {runId:string;fixture:boolean;uncertainties:string[];candidateVersion?:number;candidateHash?:string;fixtureBody?:string;reviewedAt?:string;reviewedTextSha256?:string;reviewedByHuman?:boolean;localReviewedText?:string}
+export interface NodeState {status:NodeStatus;draft:string;output:string;revision:number;dependencies:Record<string,number>;updatedAt?:string;skipReason?:string;visualInputRevision?:number;agentDraftReview?:AgentDraftReview}
 export interface Approval {id:string;gateId?:string;platform?:string;scope?:string;fingerprint:string;at:string;decision:'APPROVED'|'REJECTED'}
 export interface Project {visualWorkbench?:VisualWorkbench;videoWorkbench?:{shots:Record<string,any>[];batches:Record<string,any>[];candidates:Record<string,any>[];adoptions:Record<string,any>[]};id:string;title:string;brief:string;template:string;platforms:string[];budget:number;sample:boolean;poster:string;createdAt:string;status?:'ACTIVE'|'PAUSED'|'ABANDONED';updatedAt?:string;nodes:Record<string,NodeState>;archivedNodes?:Record<string,NodeState>;archivedNodeBindings?:Record<string,Record<string,string>>;approvals:Record<string,Approval>;bindings:Record<string,string>;nodeBindings:Record<string,Record<string,string>>}
 export interface Model {id:string;name:string;provider:string;protocol:string;baseUrl:string;remoteModelId:string;credentialRef:string;capabilities:string[];parameters:Record<string,unknown>;enabled:boolean;verified:boolean}
@@ -106,7 +107,16 @@ export function applyCommand(input:WorkspaceState,command:Command,catalog:Catalo
  case 'SAVE_NODE':{
   const pr=project(),definition=catalog.nodes.find(n=>n.id===p.nodeId);if(!definition)throw new Error('节点不存在')
   const node=pr.nodes[p.nodeId],complete=p.complete===true,text=String(p.text??'')
-  if(complete){const reasons=blockingReasons(pr,definition,catalog);if(reasons.length)throw new Error(reasons[0]);if(!text.trim())throw new Error('请先填写或导入本节点产物');validateStructuredFields(definition,text)}
+  if(complete){
+   const reasons=blockingReasons(pr,definition,catalog);if(reasons.length)throw new Error(reasons[0]);if(!text.trim())throw new Error('请先填写或导入本节点产物');validateStructuredFields(definition,text)
+   // 本地不伪造服务端的 SHA-256 记录，用已审阅文本判断幂等。
+   const review=node.agentDraftReview,alreadyReviewed=node.status==='COMPLETED'&&node.output===text&&review?.reviewedByHuman===true&&review.localReviewedText===text
+   if(review&&!alreadyReviewed){
+    if(p.agentReview?.runId!==review.runId||p.agentReview?.acknowledged!==true)throw new Error('请先核对专家草稿并完成人工确认')
+    if(review.fixture&&(p.agentReview?.fixtureReplaced!==true||(review.fixtureBody?.trim()&&text.includes(review.fixtureBody.trim()))))throw new Error('请替换测试正文并确认填入真实材料')
+    review.reviewedByHuman=true;review.reviewedAt=new Date().toISOString();review.localReviewedText=text
+   }
+  }
   node.draft=String(p.text??'');if(complete&&node.status==='COMPLETED'&&node.output===node.draft)break;if(complete){node.output=node.draft;node.status='COMPLETED';node.revision++;node.dependencies=Object.fromEntries(definition.dependsOn.map(id=>[id,pr.nodes[id].revision]));
    invalidateNode(pr,p.nodeId)
   }else if(node.status==='NOT_STARTED')node.status='DRAFT';node.updatedAt=new Date().toISOString();break

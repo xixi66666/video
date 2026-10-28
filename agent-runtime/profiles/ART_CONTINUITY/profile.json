@@ -1,7 +1,7 @@
 {
   "id": "ART_CONTINUITY",
   "name": "美术与连续性",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "人物、场景、服装、道具和风格一致性",

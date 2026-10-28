@@ -40,3 +40,19 @@ test('结构化 JSON 产物检查必填字段，自由文本仍可手工交付',
  assert.throws(()=>validateStructuredFields(n,'{"segments":[]}'),/必填字段/)
  assert.doesNotThrow(()=>validateStructuredFields(n,'这是普通手工文本'))
 })
+
+test('本地专家草稿需要确认，测试正文未替换不能完成，新内容需重新确认',()=>{
+ const s=initialState(catalog),p=s.projects[0],node=p.nodes.N08
+ node.status='DRAFT';node.draft='【测试正文】';node.agentDraftReview={runId:'run_fixture',fixture:true,fixtureBody:'【测试正文】',uncertainties:['证据待核实']}
+ const complete=(state:typeof s,text:string,agentReview?:Record<string,unknown>)=>applyCommand(state,{type:'SAVE_NODE',payload:{projectId:p.id,nodeId:'N08',text,complete:true,agentReview}},catalog)
+ const review={runId:'run_fixture',acknowledged:true,fixtureReplaced:true}
+ assert.throws(()=>complete(s,'真实材料'),/人工确认/)
+ assert.throws(()=>complete(s,'真实材料',{...review,runId:'run_other'}),/人工确认/)
+ assert.throws(()=>complete(s,'【测试正文】',review),/替换测试正文/)
+ const reviewed=complete(s,'真实材料',review),result=reviewed.projects[0].nodes.N08
+ assert.equal(result.status,'COMPLETED');assert.equal(result.agentDraftReview?.reviewedByHuman,true);assert.equal(result.agentDraftReview?.localReviewedText,'真实材料')
+ assert.doesNotThrow(()=>complete(reviewed,'真实材料'))
+ assert.throws(()=>complete(reviewed,'修改后的真实材料'),/人工确认/)
+ result.agentDraftReview!.reviewedByHuman=false
+ assert.throws(()=>complete(reviewed,'真实材料'),/人工确认/)
+})

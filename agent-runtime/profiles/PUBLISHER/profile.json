@@ -1,7 +1,7 @@
 {
   "id": "PUBLISHER",
   "name": "发布执行",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "仅执行已授权的发布计划，记录真实结果",

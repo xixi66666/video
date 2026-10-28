@@ -1,7 +1,7 @@
 {
   "id": "BUSINESS",
   "name": "经营分析",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lifecycle": "CONFIGURED",
   "domainVerified": false,
   "description": "汇总工时、成本、收入并提出经营选项",
