@@ -130,4 +130,4 @@ Worker 需要维护：已发布模板及版本、真实 ComfyUI node/input 参�
 
 新增合同测试覆盖：持久幂等、预算预留、非法归属、未连接执行端、受理未知只查询、原件回收不自动采用、取消等待确认、真实 HTTP 路径和二进制传输。它们不能替代远端 Worker/ComfyUI 实机验收。
 
-本轮通过：前端领域测试28项、后端测试28项、隔离联合浏览器测试21项，前端构建、后端打包与文档检查通过。界面检查：[桌面](screenshots/production-lottery-desktop.png)、[手机](screenshots/production-lottery-mobile.png)。
+本轮通过：前端领域测试29项、后端测试32项、普通浏览器测试17项、隔离联合浏览器测试24项，前端构建、后端打包与文档检查通过。界面检查：[桌面](screenshots/production-lottery-desktop.png)、[手机](screenshots/production-lottery-mobile.png)。
