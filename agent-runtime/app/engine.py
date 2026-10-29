@@ -1,6 +1,7 @@
 """外层 LangGraph 持久流程 + 内层 Deep Agents 主管真实 task 委派。"""
 import hashlib
 import json
+import os
 import sqlite3
 import threading
 import time
@@ -9,7 +10,7 @@ from typing import TypedDict
 from deepagents import create_deep_agent, register_harness_profile, HarnessProfile, GeneralPurposeSubagentProfile
 from deepagents.backends import StateBackend
 from deepagents.backends.utils import create_file_data
-from deepagents.middleware.filesystem import FilesystemMiddleware
+from deepagents.middleware.filesystem import FilesystemMiddleware, DEFAULT_READ_OFFSET, DEFAULT_READ_LIMIT
 from langchain.agents.middleware import AgentMiddleware
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import tool
@@ -27,12 +28,41 @@ for provider in ("openai", "workbench-fixture"):
         excluded_tools=frozenset({"execute", "write_file", "edit_file", "delete", "ls", "glob", "grep"})))
 
 
+class ExecutionPolicyError(ValueError):
+    """运行时自行产生、可安全显示的固定策略错误。"""
+
+
 class RunState(TypedDict, total=False):
     run_id: str
     attempt: int
     candidate: dict
     review: dict
     accepted: bool
+
+
+def model_snapshot_for_role(payload, role):
+    """新旧快照都按运行实际使用的角色解析，避免校验与执行对象不一致。"""
+    model_key = "supervisor" if role == "SUPERVISOR" else "reviewer" if role == "REVIEWER" else "worker"
+    models = payload["models"]
+    return models.get("consultant_" + role, models.get("worker", {})) if role in payload.get("consultationRoles", []) else models.get(model_key, {})
+
+
+def complete_profile_read(profile, target, args, result):
+    """只有完整、未截断的角色文件读取才满足提交前置条件。"""
+    source = profile.get("skill" if target == "ROLE_SKILL" else "knowledge") if target in {"ROLE_SKILL", "ROLE_KNOWLEDGE"} else None
+    offset = args.get("offset", DEFAULT_READ_OFFSET)
+    limit = args.get("limit", DEFAULT_READ_LIMIT)
+    content = getattr(result, "content", None)
+    if not (getattr(result, "status", None) == "success" and isinstance(source, str) and source.strip()
+            and type(offset) is int and offset == 0 and type(limit) is int and limit >= len(source.splitlines())
+            and isinstance(content, str)):
+        return False
+    # 按工具返回的窗口元信息与实际原文双重核对；任何字节上限、行中截断或未知提示都不能冒充完整读取。
+    lines = len(source.splitlines())
+    body = source.replace("\r\n", "\n").replace("\r", "\n")
+    if body.endswith("\n"):
+        body = body[:-1]
+    return content == f"@@ lines 1-{lines} of {lines} @@\n{body}"
 
 
 class Guard(AgentMiddleware):
@@ -43,10 +73,18 @@ class Guard(AgentMiddleware):
         e = self.execution
         with e.lock:
             e.check()
-            count = sum(x["kind"] == "MODEL_STARTED" for x in e.store.events(e.id))
-            if count >= e.payload["limits"]["maxModelCalls"]:
-                raise ValueError("达到模型调用次数上限")
-            e.emit("MODEL_STARTED", self.role, call=count + 1)
+            if e.payload.get("mode") == "LIVE":
+                if os.getenv("CREATOR_ENABLE_LIVE_MODELS", "false").lower() != "true":
+                    raise ExecutionPolicyError("真实模型调用被服务器开关关闭")
+                snapshot = model_snapshot_for_role(e.payload, self.role)
+                authorized = set(os.getenv("CREATOR_APPROVED_AGENT_MODELS", "").split(","))
+                if not isinstance(snapshot, dict) or not isinstance(snapshot.get("id"), str) or not snapshot["id"] or snapshot["id"] not in authorized:
+                    raise ExecutionPolicyError("模型不在操作者当前授权白名单")
+            reserved = e.store.reserve_model_call(e.id, self.role, e.payload["limits"]["maxModelCalls"])
+            if reserved == "LIMIT":
+                raise ExecutionPolicyError("达到模型调用次数上限")
+            if reserved != "RESERVED":
+                raise ExecutionPolicyError("运行已取消或不在运行状态")
         if self.role == "REVIEWER":
             required = (skill_path(e.payload["profiles"][self.role]), f"/knowledge/{self.role}.md")
             if all((self.role, path) in e.reads for path in required):
@@ -66,9 +104,9 @@ class Guard(AgentMiddleware):
         name = request.tool_call["name"]
         if name == "task" and (self.role != "SUPERVISOR" or not self.execution.pending_delegates or
                 request.tool_call["args"].get("subagent_type") != self.execution.pending_delegates[0]):
-            raise ValueError("禁止委派到未授权角色或递归助手")
+            raise ExecutionPolicyError("禁止委派到未授权角色或递归助手")
         if name == "task" and any(("SUPERVISOR", path) not in self.execution.reads for path in (skill_path(self.execution.payload["profiles"]["SUPERVISOR"]), "/knowledge/SUPERVISOR.md")):
-            raise ValueError("主管必须先读取自己的 Skill 与知识")
+            raise ExecutionPolicyError("主管必须先读取自己的 Skill 与知识")
         self.execution.emit("TOOL_STARTED", self.role, tool=name,
             delegate=request.tool_call["args"].get("subagent_type") if name == "task" else None)
         result = handler(request)
@@ -80,9 +118,10 @@ class Guard(AgentMiddleware):
             profile = self.execution.payload["profiles"][self.role]
             target = "ROLE_SKILL" if path == skill_path(profile) else "ROLE_KNOWLEDGE" if path == f"/knowledge/{self.role}.md" else "OTHER"
             success = getattr(result, "status", None) == "success"
-            if success:
+            complete = success and complete_profile_read(profile, target, request.tool_call["args"], result)
+            if complete:
                 self.execution.reads.add((self.role, path))
-            self.execution.emit("TOOL_FINISHED", self.role, tool=name, fileTarget=target, success=success)
+            self.execution.emit("TOOL_FINISHED", self.role, tool=name, fileTarget=target, success=success, complete=complete)
         else:
             self.execution.emit("TOOL_FINISHED", self.role, tool=name)
         return result
@@ -101,9 +140,9 @@ class Execution:
 
     def check(self):
         if self.store.get(self.id)["status"] == "CANCELLED":
-            raise ValueError("运行已取消")
+            raise ExecutionPolicyError("运行已取消")
         if time.monotonic() - self.started > self.payload["limits"]["maxSeconds"]:
-            raise ValueError("达到运行时间上限")
+            raise ExecutionPolicyError("达到运行时间上限")
 
     def files(self, role):
         profile = self.payload["profiles"][role]
@@ -112,10 +151,8 @@ class Execution:
 
     def agent(self, role, tools, attempt, subagents=None, prompt_suffix=""):
         profile = self.payload["profiles"][role]
-        model_key = "supervisor" if role == "SUPERVISOR" else "reviewer" if role == "REVIEWER" else "worker"
-        models = self.payload["models"]
         # 旧运行未保存会诊模型快照时，继续使用旧版的主责 worker 模型。
-        snapshot = models.get("consultant_" + role, models.get("worker", {})) if role in self.payload.get("consultationRoles", []) else models.get(model_key, {})
+        snapshot = model_snapshot_for_role(self.payload, role)
         model = build_model(snapshot, role, self.payload, attempt)
         return create_deep_agent(model=model, tools=tools, name=role, subagents=subagents,
             system_prompt=profile["prompt"] + prompt_suffix, skills=["/skills/"], backend=StateBackend(),
@@ -148,12 +185,12 @@ class Execution:
             """
             self.check()
             if any((role, path) not in self.reads for path in (skill_path(self.payload["profiles"][role]), f"/knowledge/{role}.md", "INPUTS")):
-                raise ValueError("专家必须先读取独立 Skill、知识和任务输入")
+                raise ExecutionPolicyError("专家必须先读取独立 Skill、知识和任务输入")
             if result:
-                raise ValueError("本次委派只允许一个候选")
+                raise ExecutionPolicyError("本次委派只允许一个候选")
             required = node["output"]["requiredFields"]
             if any(k not in fields or not fields[k] for k in required) or not body.strip():
-                raise ValueError("缺少必填交付字段")
+                raise ExecutionPolicyError("缺少必填交付字段")
             candidate = {"fields": fields, "body": body, "sources": sources, "uncertainties": uncertainties,
                 "artifactType": node["output"]["artifactType"], "executionMode": self.payload["executionMode"],
                 "fixture": self.payload["mode"] == "FIXTURE", "version": attempt + 1}
@@ -171,7 +208,7 @@ class Execution:
                         "status": "NEEDS_REVIEW"}
                     self.emit("CONSULTATION_COMPARISON_INCOMPLETE", role)
             if len(json.dumps(candidate)) > 180000:
-                raise ValueError("候选内容过长")
+                raise ExecutionPolicyError("候选内容过长")
             candidate["sha256"] = hashlib.sha256(json.dumps(candidate, sort_keys=True).encode()).hexdigest()
             result.update(candidate)
             return "候选已暂存，等待独立评审。"
@@ -212,13 +249,13 @@ class Execution:
                     self.check()
                     if any((consult_role, path) not in self.reads for path in
                            (skill_path(self.payload["profiles"][consult_role]), f"/knowledge/{consult_role}.md", "INPUTS")):
-                        raise ValueError("会诊专家必须先读取自己的 Skill、知识和输入")
+                        raise ExecutionPolicyError("会诊专家必须先读取自己的 Skill、知识和输入")
                     if opinion or not analysis.strip():
-                        raise ValueError("会诊意见为空或重复提交")
+                        raise ExecutionPolicyError("会诊意见为空或重复提交")
                     value = {"role": consult_role, "profileHash": self.payload["profiles"][consult_role]["sha256"],
                              "analysis": analysis, "sources": sources, "uncertainties": uncertainties}
                     if len(json.dumps(value, ensure_ascii=False)) > 30000:
-                        raise ValueError("会诊意见过长")
+                        raise ExecutionPolicyError("会诊意见过长")
                     value["sha256"] = hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
                     opinion.update(value)
                     return "会诊意见已记录，交主责专家处理。"
@@ -232,7 +269,7 @@ class Execution:
                               profileHash=self.payload["profiles"][consult_role]["sha256"], purpose="CONSULTATION")
                     response = advisor.invoke({"messages": inputs["messages"], "files": self.files(consult_role)}, config)
                     if not opinion:
-                        raise ValueError("会诊专家未提交意见")
+                        raise ExecutionPolicyError("会诊专家未提交意见")
                     opinions.append(dict(opinion))
                     self.emit("CONSULTATION_FINISHED", consult_role, attempt=attempt + 1,
                               sha256=opinion["sha256"], profileHash=opinion["profileHash"])
@@ -251,9 +288,9 @@ class Execution:
             "instruction": "按 consultationRoles 顺序逐一用 task 委派会诊专家提交意见，再委派 expert 提交候选；不能代写或跳过。"}, ensure_ascii=False)}],
             "files": self.files("SUPERVISOR")}, {"recursion_limit": 36})
         if not result:
-            raise ValueError("主管没有完成实际委派与专家交付")
+            raise ExecutionPolicyError("主管没有完成实际委派与专家交付")
         if self.pending_delegates or len(opinions) != len(consultants):
-            raise ValueError("会诊或委派未完成")
+            raise ExecutionPolicyError("会诊或委派未完成")
         if opinions:
             self.store.artifact(self.id, attempt + 1, "CONSULTATION", opinions)
         self.store.artifact(self.id, attempt + 1, "CANDIDATE", result)
@@ -268,11 +305,11 @@ class Execution:
         def submit_review(verdict: str, issues: list[str], summary: str) -> str:
             """独立评审结论：PASS 或 REVISE；返工必须给出可操作问题。"""
             if any(("REVIEWER", path) not in self.reads for path in (skill_path(self.payload["profiles"]["REVIEWER"]), "/knowledge/REVIEWER.md")):
-                raise ValueError("评审必须读取自己的 Skill 和知识")
+                raise ExecutionPolicyError("评审必须读取自己的 Skill 和知识")
             if verdict not in {"PASS", "REVISE"} or (verdict == "REVISE" and not issues) or not summary.strip():
-                raise ValueError("评审结构不合法")
+                raise ExecutionPolicyError("评审结构不合法")
             if result:
-                raise ValueError("不能重复提交评审")
+                raise ExecutionPolicyError("不能重复提交评审")
             result.update(verdict=verdict, issues=issues, summary=summary, candidateHash=state["candidate"]["sha256"])
             return "评审已记录"
 
@@ -282,7 +319,7 @@ class Execution:
         agent.invoke({"messages": [{"role": "user", "content": json.dumps({"node": self.payload["node"],
             "candidate": state["candidate"], "input": self.payload["input"]}, ensure_ascii=False)}], "files": self.files(role)}, {"recursion_limit": 24})
         if not result:
-            raise ValueError("评审没有提交结构化结论")
+            raise ExecutionPolicyError("评审没有提交结构化结论")
         self.store.artifact(self.id, state["attempt"] + 1, "REVIEW", result)
         self.emit("REVIEW_FINISHED", role, **result)
         return {"review": result, "attempt": state["attempt"] + 1}
@@ -291,7 +328,7 @@ class Execution:
         # interrupt 前不能写业务状态；恢复时此函数会重新执行。
         decision = interrupt({"kind": "HUMAN_ACCEPTANCE", "candidateHash": state["candidate"]["sha256"]})
         if decision not in {"ACCEPT", "REJECT"}:
-            raise ValueError("采纳决定不合法")
+            raise ExecutionPolicyError("采纳决定不合法")
         return {"accepted": decision == "ACCEPT"}
 
     def graph(self, saver):
@@ -318,25 +355,44 @@ class Engine:
         with self.lock:
             if run_id in self.active:
                 return
+            saved = self.store.get(run_id)
+            # 排队重投和重复采纳请求只能运行尚未消费的状态，防止重复调用或重复恢复。
+            if resume is None and saved["status"] != "QUEUED":
+                return
+            if resume is not None and (saved["status"] != "WAITING_ACCEPTANCE" or saved["decision"] != resume):
+                return
             self.active.add(run_id)
         execution = Execution(self.store, run_id, self.store.get(run_id)["payload"])
+        released = False
         try:
-            self.store.status(run_id, "RUNNING")
-            graph = execution.graph(self.saver)
-            config = {"configurable": {"thread_id": run_id}, "recursion_limit": 40}
-            result = graph.invoke(Command(resume=resume) if resume else {"run_id": run_id, "attempt": 0}, config)
-            if result.get("__interrupt__"):
-                self.store.status(run_id, "WAITING_ACCEPTANCE")
-                execution.emit("HUMAN_ACCEPTANCE_REQUIRED")
-            else:
-                status = "ACCEPTED" if result.get("accepted") else "REJECTED" if "accepted" in result else "REWORK_EXHAUSTED"
-                self.store.status(run_id, status)
-                execution.emit(status)
+            while True:
+                if not self.store.status(run_id, "RUNNING"):
+                    break
+                graph = execution.graph(self.saver)
+                config = {"configurable": {"thread_id": run_id}, "recursion_limit": 40}
+                result = graph.invoke(Command(resume=resume) if resume else {"run_id": run_id, "attempt": 0}, config)
+                if not result.get("__interrupt__"):
+                    status = "ACCEPTED" if result.get("accepted") else "REJECTED" if "accepted" in result else "REWORK_EXHAUSTED"
+                    self.store.transition(run_id, status, status)
+                    break
+                if not self.store.transition(run_id, "WAITING_ACCEPTANCE", "HUMAN_ACCEPTANCE_REQUIRED"):
+                    break
+                # 决定可能在 WAITING 状态出现后、当前工作线程释放 active 前到达；
+                # 此时另一个恢复任务会被 active 去重，必须由当前线程消费持久决定。
+                with self.lock:
+                    saved = self.store.get(run_id)
+                    if saved["status"] == "WAITING_ACCEPTANCE" and saved["decision"]:
+                        resume = saved["decision"]
+                        continue
+                    self.active.discard(run_id)
+                    released = True
+                    return
         except Exception as exc:
             # 模型异常不记录 URL、凭据或供应商原始响应，付费结果可能未知。
-            safe = str(exc) if isinstance(exc, ValueError) else "执行异常，请查看脱敏事件；没有自动重试模型调用。"
-            self.store.status(run_id, "FAILED" if execution.payload["mode"] == "FIXTURE" else "UNKNOWN", safe[:300])
-            execution.emit("EXECUTION_FAILED", errorType=type(exc).__name__)
+            safe = str(exc) if isinstance(exc, ExecutionPolicyError) else "执行异常，请查看脱敏事件；没有自动重试模型调用。"
+            self.store.transition(run_id, "FAILED" if execution.payload["mode"] == "FIXTURE" else "UNKNOWN",
+                                  "EXECUTION_FAILED", error=safe[:300], errorType=type(exc).__name__)
         finally:
-            with self.lock:
-                self.active.discard(run_id)
+            if not released:
+                with self.lock:
+                    self.active.discard(run_id)

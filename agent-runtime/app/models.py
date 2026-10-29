@@ -10,6 +10,10 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_openai import ChatOpenAI
 
 
+class ModelConfigurationError(ValueError):
+    """由本项目生成、可安全返回的固定配置错误。"""
+
+
 class FixtureModel(BaseChatModel):
     role: str
     node: dict
@@ -86,7 +90,7 @@ def _credential_host_guard(credential_ref: str, base_url: str) -> bool:
         ):
             raise ValueError
     except (ValueError, TypeError):
-        raise ValueError("凭据目的地限制配置无效") from None
+        raise ModelConfigurationError("凭据目的地限制配置无效") from None
     if credential_ref not in guards:
         return False
     try:
@@ -97,7 +101,7 @@ def _credential_host_guard(credential_ref: str, base_url: str) -> bool:
     except (ValueError, TypeError):
         allowed = False
     if not allowed:
-        raise ValueError("模型服务地址不符合凭据目的地限制")
+        raise ModelConfigurationError("模型服务地址不符合凭据目的地限制")
     return True
 
 
@@ -111,20 +115,20 @@ def build_model(snapshot: dict, role: str, payload: dict, attempt=0):
                             consultation_roles=payload.get("consultationRoles", []), skill_file=file_path,
                             consultation_comparison=payload.get("consultationComparison", False))
     if os.getenv("CREATOR_ENABLE_LIVE_MODELS", "false").lower() != "true":
-        raise ValueError("真实模型调用被服务器开关关闭")
+        raise ModelConfigurationError("真实模型调用被服务器开关关闭")
     if snapshot.get("protocol") not in {"CHAT_COMPLETIONS_COMPATIBLE", "RESPONSES"}:
-        raise ValueError("此协议的 Agent 适配器尚未实现")
+        raise ModelConfigurationError("此协议的 Agent 适配器尚未实现")
     credential_ref = snapshot.get("credentialRef", "")
     guarded = _credential_host_guard(credential_ref, snapshot.get("baseUrl", ""))
     credential = os.getenv(credential_ref)
     if not credential:
-        raise ValueError("模型认证环境变量尚未设置")
+        raise ModelConfigurationError("模型认证环境变量尚未设置")
     params = snapshot.get("parameters", {})
     allowed = {"temperature", "top_p", "reasoning_effort"}
     if set(params) - allowed:
-        raise ValueError("Agent 适配器目前只允许 temperature/top_p/reasoning_effort 参数")
+        raise ModelConfigurationError("Agent 适配器目前只允许 temperature/top_p/reasoning_effort 参数")
     if "reasoning_effort" in params and (snapshot["protocol"] != "CHAT_COMPLETIONS_COMPATIBLE" or params["reasoning_effort"] != "none"):
-        raise ValueError("reasoning_effort 当前仅支持 Chat Completions 协议的 none")
+        raise ModelConfigurationError("reasoning_effort 当前仅支持 Chat Completions 协议的 none")
     # 受限凭据不跟随重定向，防止服务端将认证请求转发到其他目的地。
     clients = {"http_client": httpx.Client(follow_redirects=False),
                "http_async_client": httpx.AsyncClient(follow_redirects=False)} if guarded else {}

@@ -2,11 +2,13 @@ package cn.creator.workbench.service;
 
 import cn.creator.workbench.api.WorkspaceCommand;
 import cn.creator.workbench.persistence.AgentRunMapper;
+import cn.creator.workbench.persistence.AgentRunRecord;
 import com.google.gson.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -16,6 +18,7 @@ class AgentRunServiceTest {
     @Autowired AgentRunService service;
     @Autowired WorkspaceService workspace;
     @Autowired AgentRunMapper mapper;
+    @Autowired JdbcTemplate jdbc;
     @MockitoBean AgentRuntimeClient runtime;
     String projectId;
     @BeforeEach void prepare(){
@@ -139,12 +142,39 @@ class AgentRunServiceTest {
         var control=new JsonObject();control.addProperty("action","DELETE");service.control(id,control);assertNotNull(mapper.find(id).getDeletedAt());
         control.addProperty("action","RESTORE");service.control(id,control);assertNull(mapper.find(id).getDeletedAt());
     }
+    @Test void deletedRunCannotBeAdoptedUntilRestored(){
+        var p=request("N08");String id=p.get("id").getAsString();service.create(p);service.dispatch();waiting(id);
+        var control=new JsonObject();control.addProperty("action","DELETE");service.control(id,control);
+        assertEquals(409,assertThrows(BusinessException.class,()->service.decide(id,decision())).getStatus());
+        assertNotEquals("DRAFT",currentNode().get("status").getAsString());
+        control.addProperty("action","RESTORE");service.control(id,control);
+        assertDoesNotThrow(()->service.decide(id,decision()));
+    }
     @Test void permanentDispatchFailureIsVisibleAndRetryable(){
         when(runtime.post(anyString(),any())).thenThrow(new BusinessException(400,"测试永久投递错误"));
         var p=request("N08");String id=p.get("id").getAsString();service.create(p);
         service.dispatch();
         var failed=mapper.find(id);assertEquals("SUBMISSION_FAILED",failed.getState());assertEquals("测试永久投递错误",failed.getDispatchError());assertEquals(1,failed.getDispatchAttempts());
         var retry=new JsonObject();retry.addProperty("action","RETRY");service.control(id,retry);assertEquals("PENDING_SUBMISSION",mapper.find(id).getState());
+    }
+    @Test void olderPendingRunIsDispatchedDespiteMoreThan200RecentFinishedRuns() throws Exception {
+        String prefix="run_outbox_"+UUID.randomUUID().toString().replace("-","");
+        try {
+            for(int i=0;i<200;i++){
+                var finished=new AgentRunRecord();finished.setId(prefix+"_"+i);finished.setProjectId(projectId);finished.setNodeId("N08");
+                finished.setPayload("{}");finished.setInputFingerprint("test");finished.setState("ADOPTED");finished.setCreatedAt("2099-01-01T00:00:00Z");mapper.insert(finished);
+            }
+            var pending=new AgentRunRecord();pending.setId(prefix+"_old");pending.setProjectId(projectId);pending.setNodeId("N08");
+            pending.setPayload("{}");pending.setInputFingerprint("test");pending.setState("PENDING_SUBMISSION");pending.setCreatedAt("2000-01-01T00:00:00Z");mapper.insert(pending);
+            assertFalse(mapper.list().stream().anyMatch(r->r.getId().equals(pending.getId())));
+            assertTrue(mapper.pending().stream().anyMatch(r->r.getId().equals(pending.getId())));
+            long end=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+            while(System.nanoTime()<end&&mapper.find(pending.getId()).getState().equals("PENDING_SUBMISSION")){service.dispatch();Thread.sleep(25);}
+            assertEquals("SUBMITTED",mapper.find(pending.getId()).getState());
+        } finally {
+            jdbc.update("DELETE FROM agent_run_dispatch WHERE run_id LIKE ?",prefix+"%");
+            jdbc.update("DELETE FROM agent_run WHERE id LIKE ?",prefix+"%");
+        }
     }
     @Test void resolverInheritsCompatibleOverrides(){
         var state=JsonParser.parseString("""

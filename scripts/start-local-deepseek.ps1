@@ -130,7 +130,7 @@ try {
     }
     throw 'Startup did not finish. Inspect .run logs.'
 } catch {
-    foreach ($process in $started) { if (-not $process.HasExited) { Stop-Process -Id $process.Id -ErrorAction SilentlyContinue } }
+    foreach ($process in $started) { if (-not $process.HasExited) { Stop-Process -InputObject $process -ErrorAction SilentlyContinue } }
     throw
 } finally {
     $key = $null

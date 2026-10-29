@@ -5,17 +5,23 @@ import net from 'node:net'
 import crypto from 'node:crypto'
 import {spawn,spawnSync} from 'node:child_process'
 import {fileURLToPath} from 'node:url'
+import {removeIsolatedTestDirectory} from './e2e-temp-cleanup.mjs'
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'creator-workbench-e2e-'))
 const children=[],logs=[]
 const instance=crypto.randomUUID()
-const environment={...process.env,CREATOR_RUNTIME_TOKEN:crypto.randomBytes(32).toString('base64'),CREATOR_ENABLE_LIVE_MODELS:'false',CREATOR_APPROVED_AGENT_MODELS:'',CREATOR_RUNTIME_DATA:path.join(temporary,'runtime')}
+fs.writeFileSync(path.join(temporary,'.creator-e2e-instance'),instance,{flag:'wx'})
+const environment={...process.env,CREATOR_RUNTIME_TOKEN:crypto.randomBytes(32).toString('base64'),CREATOR_ENABLE_LIVE_MODELS:'false',CREATOR_APPROVED_AGENT_MODELS:'',CREATOR_RUNTIME_DATA:path.join(temporary,'runtime'),CREATOR_RESEARCH_ENABLED:'false',CREATOR_LOCAL_MEDIA_ENABLED:'false'}
+// 隔离测试不调用付费服务，避免将父进程的真实凭据传播给测试进程。
+delete environment.DEEPSEEK_API_KEY
+delete environment.CREATOR_CREDENTIAL_HOST_GUARDS
+function publicEnvironment(){const copy={...environment};delete copy.CREATOR_RUNTIME_TOKEN;return copy}
 let closing=false
 async function freePort(){return await new Promise((resolve,reject)=>{const server=net.createServer();server.on('error',reject);server.listen(0,'127.0.0.1',()=>{const port=server.address().port;server.close(error=>error?reject(error):resolve(port))})})}
 function start(executable,args,cwd,name){
  const log=fs.openSync(path.join(temporary,name+'.log'),'a');logs.push(log)
- const child=spawn(executable,args,{cwd,env:environment,windowsHide:true,stdio:['ignore',log,log]})
+ const child=spawn(executable,args,{cwd,env:name==='frontend'?publicEnvironment():environment,windowsHide:true,stdio:['ignore',log,log]})
  child.on('error',error=>{child.startError=error});children.push(child);return child
 }
 async function ready(url,child,check,headers={}){
@@ -56,11 +62,11 @@ try{
  await ready(baseURL+'/api/v1/health',web,response=>response.headers.get('x-workbench-test-instance')===instance)
  console.log('联合测试使用临时数据目录：'+temporary)
  const cli=path.join(root,'frontend/node_modules/@playwright/test/cli.js')
- const run=spawn(process.execPath,[cli,'test',...process.argv.slice(2)],{cwd:path.join(root,'frontend'),env:environment,windowsHide:true,stdio:'inherit'})
+ const run=spawn(process.execPath,[cli,'test',...process.argv.slice(2)],{cwd:path.join(root,'frontend'),env:publicEnvironment(),windowsHide:true,stdio:'inherit'})
  children.push(run)
  const code=await new Promise((resolve,reject)=>{run.on('error',reject);run.on('exit',code=>resolve(code??1))})
  process.exitCode=code
  await cleanup()
- if(code===0){fs.rmSync(temporary,{recursive:true,force:true});console.log('隔离测试通过，临时数据库和文件已清理。')}
+ if(code===0){removeIsolatedTestDirectory(temporary,os.tmpdir(),instance);console.log('隔离测试通过，临时数据库和文件已清理。')}
  else console.error('测试未通过，隔离日志保留在：'+temporary)
 }catch(error){process.exitCode=1;await cleanup();console.error(error.message+'；隔离日志目录：'+temporary)}

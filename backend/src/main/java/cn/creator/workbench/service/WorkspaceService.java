@@ -6,12 +6,16 @@ import com.google.gson.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /** 单人工作区聚合：命令校验、版本控制、人工产物与拍板均在服务端再次检查。 */
 @Service
@@ -21,6 +25,7 @@ public class WorkspaceService {
     private final JsonObject catalog;
     private final String initial;
     private final Map<String,JsonObject> definitions=new LinkedHashMap<>();
+    private final ReentrantLock workspaceLock=new ReentrantLock();
     public WorkspaceService(WorkspaceMapper mapper,VisualCandidateService visualCandidates) throws IOException {
         this.visualCandidates=visualCandidates;
         this.mapper=mapper;
@@ -28,8 +33,22 @@ public class WorkspaceService {
         try(var input=new ClassPathResource("initial-state.json").getInputStream()){initial=new String(input.readAllBytes(),StandardCharsets.UTF_8);}
         catalog.getAsJsonArray("nodes").forEach(n->definitions.put(n.getAsJsonObject().get("id").getAsString(),n.getAsJsonObject()));
     }
+    /** 外层事务也可能持有工作区变更：必须等事务完成后再释放锁。 */
+    private <T> T withWorkspaceLock(Supplier<T> action){
+        workspaceLock.lock();boolean deferred=false;
+        try {
+            if(TransactionSynchronizationManager.isActualTransactionActive()&&TransactionSynchronizationManager.isSynchronizationActive()){
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization(){
+                    @Override public void afterCompletion(int status){workspaceLock.unlock();}
+                });
+                deferred=true;
+            }
+            return action.get();
+        } finally {if(!deferred)workspaceLock.unlock();}
+    }
     @Transactional
-    public synchronized JsonObject load(){
+    public JsonObject load(){return withWorkspaceLock(this::loadInternal);}
+    private JsonObject loadInternal(){
         var record=mapper.findWorkspace("local");
         if(record==null){mapper.insertWorkspace("local",initial);return JsonParser.parseString(initial).getAsJsonObject();}
         var state=JsonParser.parseString(record.getPayload()).getAsJsonObject();
@@ -57,7 +76,10 @@ public class WorkspaceService {
 
     /** 仅供服务内部采纳专家候选：草稿与来源在同一次版本检查和数据库更新中写入。 */
     @Transactional
-    public synchronized JsonObject saveAgentDraft(String projectId,String nodeId,String text,JsonObject provenance,long expectedVersion){
+    public JsonObject saveAgentDraft(String projectId,String nodeId,String text,JsonObject provenance,long expectedVersion){
+        return withWorkspaceLock(()->saveAgentDraftInternal(projectId,nodeId,text,provenance,expectedVersion));
+    }
+    private JsonObject saveAgentDraftInternal(String projectId,String nodeId,String text,JsonObject provenance,long expectedVersion){
         var state=load();long version=state.get("version").getAsLong();
         if(expectedVersion!=version)throw new BusinessException(409,"工作区已在其他窗口更新，请刷新后重试。");
         var p=new JsonObject();p.addProperty("projectId",projectId);p.addProperty("nodeId",nodeId);p.addProperty("text",text);p.addProperty("complete",false);
@@ -68,7 +90,8 @@ public class WorkspaceService {
         return state;
     }
     @Transactional
-    public synchronized JsonObject execute(WorkspaceCommand command){
+    public JsonObject execute(WorkspaceCommand command){return withWorkspaceLock(()->executeInternal(command));}
+    private JsonObject executeInternal(WorkspaceCommand command){
         var state=load();long version=state.get("version").getAsLong();if(command.expectedVersion()!=version)throw new BusinessException(409,"工作区已在其他窗口更新，请刷新后重试。");
         var p=command.payload();
         switch(command.type()){

@@ -60,6 +60,55 @@ def test_auth_and_live_disabled(tmp_path, monkeypatch):
         assert c.post("/runs", json=body).status_code == 400
 
 
+def test_partial_skill_read_cannot_satisfy_delegation(tmp_path, monkeypatch):
+    from app.models import FixtureModel
+    original = FixtureModel._generate
+
+    def generate(self, messages, stop=None, run_manager=None, **kwargs):
+        result = original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+        calls = result.generations[0].message.tool_calls
+        if self.role == "SUPERVISOR" and calls and calls[0]["name"] == "read_file" and calls[0]["args"]["file_path"] == self.skill_file:
+            calls[0]["args"]["offset"] = 1
+        return result
+
+    monkeypatch.setattr(FixtureModel, "_generate", generate)
+    body = request("run_partial_skill_read")
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as c:
+        assert c.post("/runs", json=body).status_code == 202
+        run = wait(c, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "FAILED"
+        reads = [e["data"] for e in c.get(f"/runs/{body['id']}/events").json() if e["kind"] == "TOOL_FINISHED" and e["data"].get("fileTarget") == "ROLE_SKILL"]
+        assert reads and reads[0]["success"] and not reads[0]["complete"]
+
+
+def test_truncated_skill_content_is_not_complete():
+    from deepagents.middleware.filesystem import READ_FILE_TRUNCATION_MSG
+    from langchain_core.messages import ToolMessage
+    from app.engine import complete_profile_read
+    profile = {"skill": "第一行\n第二行\n"}
+    path = "/skills/test-skill/SKILL.md"
+    result = ToolMessage(content="部分内容\n" + READ_FILE_TRUNCATION_MSG.format(file_path=path), tool_call_id="test", status="success")
+    assert not complete_profile_read(profile, "ROLE_SKILL", {"file_path": path}, result)
+
+    # 窗口范围不完整，或 backend 在声称完整的窗口中截断正文，均不可视为已读。
+    for content in ("@@ lines 1-1 of 2 | next offset 1 @@\n第一行",
+                    "@@ lines 1-2 of 2 @@\n第一行\n[backend truncated]"):
+        result = ToolMessage(content=content, tool_call_id="test", status="success")
+        assert not complete_profile_read(profile, "ROLE_SKILL", {"file_path": path}, result)
+    result = ToolMessage(content="@@ lines 1-2 of 2 @@\n第一行\n第二行", tool_call_id="test", status="success")
+    assert complete_profile_read(profile, "ROLE_SKILL", {"file_path": path}, result)
+
+
+def test_cancel_is_idempotent_after_response_loss(tmp_path):
+    app = create_app(tmp_path, TOKEN)
+    with TestClient(app, headers={"X-Creator-Token": TOKEN}) as c:
+        run_id = "run_cancel_idempotent"
+        app.state.store.create(run_id, {})
+        assert c.post(f"/runs/{run_id}/cancel").json()["status"] == "CANCELLED"
+        assert c.post(f"/runs/{run_id}/cancel").json()["status"] == "CANCELLED"
+        assert [e["kind"] for e in c.get(f"/runs/{run_id}/events").json()] == ["CANCELLED"]
+
+
 def test_reviewer_toolset_converges_after_reading_required_materials(tmp_path, monkeypatch):
     from app.models import FixtureModel
     from langchain_core.messages import AIMessage, ToolMessage
